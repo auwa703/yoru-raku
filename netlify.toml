@@ -1,0 +1,65 @@
+# netlify.toml
+# 自店舗版とは別のNetlifyサイトとして、このリポジトリ全体をデプロイする想定の設定。
+
+[build]
+  # marketing(LP) と app(本アプリ) を1つのサイトにまとめてデプロイする構成。
+  # /app 以下は認証必須のSPA的な構成を想定し、後続の実装でルーティングを調整する。
+  publish = "marketing"
+  functions = "netlify/functions"
+  command = "echo 'no build step yet - static files only'"
+
+[functions]
+  node_bundler = "esbuild"
+
+# デモ環境は本番と同じサイトの /demo パスで配信するが、
+# 参照するデータは本番DBと完全に分離されたダミーデータのみとする（Functionsを一切呼ばない構成を推奨）。
+[[redirects]]
+  from = "/demo/*"
+  to = "/demo/:splat"
+  status = 200
+
+# トップページ以下の静的ルーティング（LP）
+[[redirects]]
+  from = "/pricing"
+  to = "/pricing.html"
+  status = 200
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 200
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
+[[redirects]]
+  from = "/legal"
+  to = "/legal.html"
+  status = 200
+
+# 認証・アプリ側の入口（/app フォルダ配下）。
+# 現状 publish = "marketing" のため、実装時はビルドステップで app/ の中身を
+# publish ディレクトリへコピーするか、publish をリポジトリルートに変更して調整する。
+[[redirects]]
+  from = "/login"
+  to = "/app/login.html"
+  status = 200
+[[redirects]]
+  from = "/signup"
+  to = "/app/signup.html"
+  status = 200
+[[redirects]]
+  from = "/onboarding"
+  to = "/app/onboarding.html"
+  status = 200
+[[redirects]]
+  from = "/app/*"
+  to = "/app/:splat"
+  status = 200
+[[redirects]]
+  from = "/admin"
+  to = "/admin/index.html"
+  status = 200
+
+# 本番公開前チェック時に参照：
+#   - /app, /admin は認証必須。実装フレームワーク確定後にリダイレクト/リライトを追記する。
+#   - Stripe Webhookは /.netlify/functions/stripe-webhook で受信する

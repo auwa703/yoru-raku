@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUPER_ADMIN｜よるラク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
+    --dusk:#0d1b2a; --dusk-deep:#08111c; --brass:#ff7a59; --brass-soft:#ffe8df;
+    --good:#4b7a63; --good-soft:#e7f0ea; --warn:#b24444; --warn-soft:#fbe9e7;
+    --radius:14px; --shadow:0 1px 3px rgba(35,34,40,.06),0 8px 24px rgba(35,34,40,.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;}
+  .status-bar{height:5px;width:100%;background:linear-gradient(90deg,var(--warn),var(--dusk-deep));}
+  header{background:var(--dusk-deep);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:900;font-size:15px;}
+  .brand-mark{width:26px;height:26px;border-radius:50%;background:conic-gradient(from -50deg, var(--brass) 0deg 110deg, var(--dusk) 110deg 360deg);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));}
+  .admin-badge{background:var(--warn);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  @media(max-width:760px){.stat-grid{grid-template-columns:1fr 1fr;}}
+  .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;}
+  .stat-card .k{font-size:11.5px;color:var(--ink-soft);}
+  .stat-card .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .toolbar input,.toolbar select{padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;font-family:inherit;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px;overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
+  th{text-align:left;font-weight:700;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:8px 10px;font-size:11.5px;}
+  td{padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge.active{background:var(--good-soft);color:var(--good);}
+  .badge.trialing{background:var(--brass-soft);color:#8a611f;}
+  .badge.past_due{background:var(--warn-soft);color:var(--warn);}
+  .badge.canceled{background:#eee;color:var(--ink-soft);}
+  select.plan-select{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;}
+  .icon-btn{background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;text-decoration:underline;}
+  .icon-btn:hover{color:var(--warn);}
+</style>
+</head>
+<body>
+<div class="status-bar"></div>
+<header>
+  <div class="brand"><div class="brand-mark"></div>よるラク <span class="admin-badge">SUPER_ADMIN</span></div>
+  <div style="font-size:12.5px;color:#9aa3b5;">運営者専用ページ — 一般の店舗アカウントからはアクセスできません</div>
+</header>
+
+<div class="wrap">
+  <div class="stat-grid" id="stat-grid"></div>
+
+  <div class="toolbar">
+    <input type="text" id="search-input" placeholder="🔍 店舗名で検索" oninput="renderTable()">
+    <select id="status-filter" onchange="renderTable()">
+      <option value="all">契約状態：すべて</option>
+      <option value="trialing">無料体験中</option>
+      <option value="active">契約中</option>
+      <option value="past_due">支払い遅延</option>
+      <option value="canceled">解約済</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr>
+        <th>店舗名</th><th>登録日</th><th>契約プラン</th><th>契約状態</th><th>スタッフ人数</th><th>最終利用日</th><th></th>
+      </tr></thead>
+      <tbody id="store-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ダミーデータ（実装時はSupabaseの stores / subscriptions / staff / audit_logs から集計する）
+let stores = [
+  {id:1, name:'DEMO LOUNGE', registeredAt:'2026-06-01', plan:'standard', status:'trialing', isMonitor:false, staffCount:3, lastUsed:'2026-08-14'},
+  {id:2, name:'スナックあかり', registeredAt:'2026-05-12', plan:'light', status:'active', isMonitor:false, staffCount:4, lastUsed:'2026-08-13'},
+  {id:3, name:'BAR MOON', registeredAt:'2026-04-20', plan:'pro', status:'active', isMonitor:false, staffCount:8, lastUsed:'2026-08-14'},
+  {id:4, name:'ラウンジ雅', registeredAt:'2026-07-02', plan:'standard', status:'past_due', isMonitor:false, staffCount:5, lastUsed:'2026-08-05'},
+  {id:5, name:'スナック花音', registeredAt:'2026-03-10', plan:'standard', status:'canceled', isMonitor:false, staffCount:2, lastUsed:'2026-07-01'},
+  {id:6, name:'Girls Bar Luna', registeredAt:'2026-07-25', plan:'standard', status:'active', isMonitor:true, staffCount:6, lastUsed:'2026-08-14'},
+];
+
+const planLabel = {light:'LIGHT', standard:'STANDARD', pro:'PRO'};
+const statusLabel = {trialing:'無料体験中', active:'契約中', past_due:'支払い遅延', canceled:'解約済'};
+
+function renderStats(){
+  const total = stores.length;
+  const activeCount = stores.filter(s=>s.status==='active').length;
+  const trialCount = stores.filter(s=>s.status==='trialing').length;
+  const pastDueCount = stores.filter(s=>s.status==='past_due').length;
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card"><div class="k">登録店舗数</div><div class="v">${total}</div></div>
+    <div class="stat-card"><div class="k">契約中</div><div class="v" style="color:var(--good);">${activeCount}</div></div>
+    <div class="stat-card"><div class="k">無料体験中</div><div class="v" style="color:#8a611f;">${trialCount}</div></div>
+    <div class="stat-card"><div class="k">支払い遅延</div><div class="v" style="color:var(--warn);">${pastDueCount}</div></div>
+  `;
+}
+
+function renderTable(){
+  const search = document.getElementById('search-input').value.trim().toLowerCase();
+  const statusFilter = document.getElementById('status-filter').value;
+  let list = stores.filter(s=>{
+    const searchOk = !search || s.name.toLowerCase().includes(search);
+    const statusOk = statusFilter==='all' || s.status===statusFilter;
+    return searchOk && statusOk;
+  });
+  document.getElementById('store-table-body').innerHTML = list.map(s=>`
+    <tr>
+      <td>${s.name}${s.isMonitor ? '<span class="badge trialing" style="margin-left:6px;">モニター</span>' : ''}</td>
+      <td>${s.registeredAt}</td>
+      <td>
+        <select class="plan-select" onchange="updatePlan(${s.id}, this.value)">
+          ${Object.keys(planLabel).map(p=>`<option value="${p}" ${p===s.plan?'selected':''}>${planLabel[p]}</option>`).join('')}
+        </select>
+      </td>
+      <td><span class="badge ${s.status}">${statusLabel[s.status]}</span></td>
+      <td>${s.staffCount}人</td>
+      <td>${s.lastUsed}</td>
+      <td>
+        ${s.status!=='canceled'
+          ? `<button class="icon-btn" onclick="suspendStore(${s.id})">利用停止にする</button>`
+          : `<button class="icon-btn" onclick="reactivateStore(${s.id})">再開する</button>`}
+      </td>
+    </tr>`).join('');
+}
+
+window.updatePlan = function(id, plan){
+  // 実装時：subscriptions.plan_id をSupabase経由で更新する（Stripe側の契約とは別に、機能プランのみ手動で上書きするケース）
+  const s = stores.find(x=>x.id===id);
+  s.plan = plan;
+  showToast(`${s.name} のプランを ${planLabel[plan]} に変更しました`);
+};
+window.suspendStore = function(id){
+  const s = stores.find(x=>x.id===id);
+  if(!confirm(`${s.name} を利用停止にしますか？`)) return;
+  s.status = 'canceled';
+  renderStats(); renderTable();
+  showToast(`${s.name} を利用停止にしました`);
+};
+window.reactivateStore = function(id){
+  const s = stores.find(x=>x.id===id);
+  s.status = 'active';
+  renderStats(); renderTable();
+  showToast(`${s.name} の利用を再開しました`);
+};
+
+function showToast(msg){
+  let el = document.getElementById('admin-toast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'admin-toast';
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dusk-deep);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:200;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(window._adminToastTimer);
+  window._adminToastTimer = setTimeout(()=>{ el.style.display='none'; }, 2400);
+}
+
+renderStats();
+renderTable();
+</script>
+</body>
+</html>

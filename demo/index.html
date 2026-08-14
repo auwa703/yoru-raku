@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>デモ体験｜よるラク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f4f7;--panel:#ffffff;--ink:#232228;--ink-soft:#6b6a72;--line:#e6e4de;
+    --dusk:#0d1b2a;--dusk-deep:#08111c;--brass:#ff7a59;--brass-soft:#ffe8df;
+    --good:#4b7a63;--good-soft:#e7f0ea;--warn:#b24444;--warn-soft:#fbe9e7;
+    --radius:14px;--shadow:0 1px 3px rgba(35,34,40,.06),0 8px 24px rgba(35,34,40,.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.brand-name{font-family:'Noto Sans JP',sans-serif;font-weight:900;}
+  button,input,select{font-family:inherit;}
+
+  /* DEMO MODE 常時バナー */
+  .demo-banner{
+    position:sticky;top:0;z-index:60;background:var(--dusk-deep);color:#fff;
+    display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+    padding:9px 14px;font-size:12.5px;
+  }
+  .demo-banner b{background:var(--brass);color:#3a2a0f;padding:2px 9px;border-radius:20px;font-weight:900;font-size:11px;letter-spacing:.03em;}
+  .demo-banner a.cta{background:#fff;color:var(--dusk-deep);border-radius:8px;padding:5px 12px;font-weight:700;text-decoration:none;font-size:12px;}
+
+  .app-shell{display:flex;min-height:calc(100vh - 40px);}
+  .sidenav{width:210px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:3px;}
+  .brand{display:flex;align-items:center;gap:9px;padding:4px 8px 18px;}
+  .brand-mark{
+    width:28px;height:28px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(from -50deg, var(--brass) 0deg 110deg, var(--dusk) 110deg 360deg);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+  }
+  .brand-name{font-size:14px;font-weight:700;color:var(--dusk-deep);}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:10px;color:var(--ink-soft);text-decoration:none;font-size:13.5px;font-weight:500;background:none;border:none;text-align:left;cursor:pointer;width:100%;}
+  .nav-item .ic{width:18px;text-align:center;}
+  .nav-item.active{background:linear-gradient(135deg,var(--dusk),var(--brass));color:#fff;}
+  .nav-item:not(.active):hover{background:var(--bg);}
+
+  .main{flex:1;min-width:0;padding:26px 22px 100px;max-width:820px;}
+  .view{display:none;}
+  .view.active{display:block;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .page-title{font-size:19px;font-weight:900;margin:0 0 4px;color:var(--dusk-deep);}
+  .page-sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 20px;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;}
+  .card h3{margin:0 0 12px;font-size:14.5px;}
+  .label{font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
+  .value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;font-family:'Montserrat',sans-serif;}
+  .value.money::before{content:'¥';font-size:14px;color:var(--brass);margin-right:2px;font-weight:700;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  @media(max-width:600px){.grid3{grid-template-columns:repeat(3,1fr);}}
+
+  .btn{font-weight:700;border:none;border-radius:9px;cursor:pointer;font-size:13px;padding:9px 15px;background:linear-gradient(135deg,var(--dusk),var(--brass));color:#fff;}
+  .btn:hover{background:var(--dusk-deep);}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink);}
+  .btn.ghost:hover{border-color:var(--dusk);color:var(--dusk);}
+  .btn.sm{padding:6px 11px;font-size:12px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-weight:500;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:6px 4px;font-size:11px;}
+  td{padding:9px 4px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .right{text-align:right;}
+
+  .staff-row{display:flex;align-items:center;justify-content:space-between;padding:11px 4px;border-bottom:1px solid var(--line);}
+  .staff-row:last-child{border-bottom:none;}
+  .staff-name{font-weight:700;font-size:14px;}
+  .staff-status{font-size:11.5px;color:var(--ink-soft);}
+  .staff-status.working{color:var(--good);font-weight:700;}
+
+  .denom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;padding:7px 0;}
+  .denom-row .d{font-weight:700;font-size:13.5px;}
+  .denom-row input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;font-size:15px;text-align:right;}
+  .denom-row .sub{font-size:12.5px;color:var(--ink-soft);text-align:right;}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .form-grid label{display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;}
+  .form-grid input,.form-grid select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font-size:14px;}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge.warn{background:var(--warn-soft);color:var(--warn);}
+  .badge.good{background:var(--good-soft);color:var(--good);}
+
+  .bottomnav{display:none;}
+  @media(max-width:820px){
+    .sidenav{display:none;}
+    .main{padding:16px 12px 90px;max-width:100%;}
+    .grid2{grid-template-columns:1fr 1fr;}
+    .form-grid{grid-template-columns:1fr;}
+    .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;z-index:50;}
+    .bottomnav button{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-soft);background:none;border:none;font-size:10.5px;font-weight:500;padding:6px 6px;border-radius:10px;min-width:52px;}
+    .bottomnav button .ic{font-size:18px;}
+    .bottomnav button.active{color:var(--dusk);font-weight:700;}
+    input,select,button{font-size:16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-banner">
+  <b>DEMO MODE</b>
+  <span>こちらはサンプルデータを使用したデモ環境です。入力内容は保存されません。</span>
+  <a class="cta" href="../marketing/index.html#pricing">無料で始める</a>
+</div>
+
+<div class="app-shell">
+  <nav class="sidenav">
+    <div class="brand"><div class="brand-mark"></div><div class="brand-name" id="sidenav-store-name">DEMO LOUNGE</div></div>
+    <button class="nav-item active" data-view="home"><span class="ic">🏠</span>ホーム</button>
+    <button class="nav-item" data-view="staff"><span class="ic">👤</span>スタッフ管理</button>
+    <button class="nav-item" data-view="attendance"><span class="ic">⏱</span>勤怠</button>
+    <button class="nav-item" data-view="backs"><span class="ic">🍾</span>バック・日払い</button>
+    <button class="nav-item" data-view="report"><span class="ic">📋</span>今日の営業</button>
+    <button class="nav-item" data-view="payroll"><span class="ic">💴</span>給与</button>
+    <button class="nav-item" data-view="monthly"><span class="ic">📈</span>月次集計</button>
+    <button class="nav-item" data-view="settings"><span class="ic">⚙️</span>設定</button>
+    <button class="nav-item" data-view="help"><span class="ic">❓</span>使い方・ヘルプ</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- ホーム -->
+    <section class="view active" id="view-home">
+      <h1 class="page-title">おかえりなさい</h1>
+      <p class="page-sub"><span id="home-store-name">DEMO LOUNGE</span> さん — 今日やるべきことはこちらです</p>
+
+      <div class="card" id="report-status-card">
+        <div class="label" id="report-status-label">📋 今日の営業　まだ入力されていません</div>
+        <button class="btn" onclick="goTo('report')">今日の営業を入力する →</button>
+      </div>
+
+      <div class="grid2">
+        <div class="card"><div class="label">本日の出勤</div><div class="value" id="home-working-count">0人</div></div>
+        <div class="card"><div class="label">本日の日払い</div><div class="value money" id="home-dailypay">0</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="label">本日のバック合計</div><div class="value money" id="home-back-total">0</div></div>
+        <div class="card"><div class="label">今日の営業ステータス</div><div style="margin-top:6px;" id="home-report-badge"><span class="badge warn">未締め</span></div></div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div><div class="label" style="margin-bottom:0;">時給やスタッフの登録はこちらから</div></div>
+        <button class="btn ghost sm" onclick="goTo('staff')">スタッフ管理を開く →</button>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div><div class="label" style="margin-bottom:0;">今月の売上・人件費率などの集計</div></div>
+        <button class="btn ghost sm" onclick="goTo('monthly')">月次集計を見る →</button>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div><div class="label" style="margin-bottom:0;">操作に迷ったら</div></div>
+        <button class="btn ghost sm" onclick="goTo('help')">使い方・ヘルプを開く →</button>
+      </div>
+    </section>
+
+    <!-- スタッフ管理 -->
+    <section class="view" id="view-staff">
+      <h1 class="page-title">スタッフ管理</h1>
+      <p class="page-sub">時給の変更や新しいスタッフの登録はここで行います</p>
+
+      <div class="card"><div id="staff-manage-list"></div></div>
+
+      <div class="card">
+        <h3>新しいスタッフを登録</h3>
+        <div class="form-grid">
+          <div><label>名前</label><input type="text" id="new-staff-name" placeholder="例：スタッフD"></div>
+          <div><label>ログインID</label><input type="text" id="new-staff-login" placeholder="例：d-staff"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>時給（円）</label><input type="number" id="new-staff-wage" placeholder="例：1400"></div>
+          <div><label>入店日</label><input type="date" id="new-staff-joined"></div>
+        </div>
+        <button class="btn" onclick="addStaff()">スタッフを追加</button>
+      </div>
+
+      <div class="card" id="retired-staff-card" style="display:none;">
+        <h3>退職したスタッフ</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">給与や勤怠の対象からは外れますが、記録は残ります。再雇用も可能です。</p>
+        <div id="retired-staff-list"></div>
+      </div>
+    </section>
+
+    <!-- 勤怠 -->
+    <section class="view" id="view-attendance">
+      <h1 class="page-title">勤怠</h1>
+      <p class="page-sub">お店に設置した端末のQRコードを読み取った時だけ、出勤・退勤できます</p>
+
+      <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn sm" id="mode-kiosk-btn" onclick="setAttendanceMode('kiosk')">🖥 お店の端末（QR表示）</button>
+        <button class="btn sm ghost" id="mode-staff-btn" onclick="setAttendanceMode('staff')">📱 スタッフの画面（読み取り後）</button>
+        <button class="btn sm ghost" onclick="openAdminEdit()" style="margin-left:auto;">🔧 管理者が手動で修正</button>
+      </div>
+
+      <!-- お店の端末：QRコード表示 -->
+      <div class="card" id="kiosk-view">
+        <h3>出勤・退勤用コード</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">この画面をお店のタブレット等に常時表示しておきます。スタッフは自分のスマホで読み取ってください。</p>
+        <div style="display:flex;justify-content:center;margin:16px 0;">
+          <div id="qr-box" style="width:150px;height:150px;border:2px solid var(--dusk);border-radius:12px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#fff,#fff 6px,#eee 6px,#eee 12px);">
+            <span style="font-size:11px;color:var(--ink-soft);text-align:center;padding:8px;">実際の画面では<br>ここにQRコードが<br>表示されます</span>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div class="label">現在のコード（デモ表示用）</div>
+          <div style="font-family:monospace;font-size:12px;color:var(--ink-soft);" id="qr-token-display">-</div>
+          <div style="margin-top:8px;"><span class="badge good" id="qr-timer">あと 30 秒で更新</span></div>
+        </div>
+      </div>
+
+      <!-- スタッフのスマホ：読み取り後の画面 -->
+      <div class="card" id="staff-view" style="display:none;">
+        <h3>出勤・退勤する</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">お店のQRコードを読み取ると、この画面が開きます（デモでは自動的に開いた状態にしています）</p>
+        <div id="staff-list"></div>
+      </div>
+
+      <!-- 管理者による手動修正モーダル -->
+      <div id="admin-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(28,24,21,.45);z-index:100;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:12px;padding:22px;max-width:360px;width:100%;">
+          <h3 style="margin-top:0;">勤怠を手動で修正</h3>
+          <div class="form-grid">
+            <div><label>スタッフ</label><select id="admin-edit-staff"></select></div>
+            <div><label>区分</label>
+              <select id="admin-edit-type"><option value="clock_in">出勤時刻を修正</option><option value="clock_out">退勤時刻を修正</option></select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div><label>時刻</label><input type="time" id="admin-edit-time"></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr;">
+            <div><label>修正理由（必須）</label><input type="text" id="admin-edit-reason" placeholder="例：QR読み取り忘れのため"></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+            <button class="btn ghost sm" onclick="closeAdminEdit()">キャンセル</button>
+            <button class="btn sm" onclick="submitAdminEdit()">修正を保存</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- バック・日払い -->
+    <section class="view" id="view-backs">
+      <h1 class="page-title">バック・日払い</h1>
+      <p class="page-sub">今日のバックと日払いを登録します。登録内容は給与へ自動反映されます</p>
+
+      <div class="card">
+        <h3>バック項目の管理</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">ドリンク・予約・同伴のほか、ショット・ボトル・シャンパンなどお店独自の項目も自由に追加できます</p>
+        <div id="back-item-manage-list"></div>
+
+        <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);">
+          <div class="form-grid">
+            <div><label>項目名</label><input type="text" id="new-backitem-name" placeholder="例：シャンパン"></div>
+            <div><label>カテゴリー</label>
+              <select id="new-backitem-category">
+                <option value="基本">基本</option>
+                <option value="店舗独自">店舗独自</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div><label>販売価格（円・任意）</label><input type="number" id="new-backitem-price" placeholder="例：15000"></div>
+            <div><label>バック金額（円）</label><input type="number" id="new-backitem-back" placeholder="例：3000"></div>
+          </div>
+          <button class="btn ghost sm" onclick="addBackItem()">＋ バック項目を追加</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>バックを登録</h3>
+        <div class="form-grid">
+          <div><label>スタッフ</label><select id="back-staff"></select></div>
+          <div><label>バック項目</label><select id="back-item"></select></div>
+        </div>
+        <button class="btn" onclick="addBackRecord()">登録する</button>
+      </div>
+
+      <div class="card">
+        <h3>今日のバック記録</h3>
+        <div id="back-records-list"><p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p></div>
+      </div>
+
+      <div class="card">
+        <h3>日払いを登録</h3>
+        <div class="form-grid">
+          <div><label>スタッフ</label><select id="pay-staff"></select></div>
+          <div><label>金額（円）</label><input type="number" id="pay-amount" placeholder="例：10000"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>支払方法</label>
+            <select id="pay-source">
+              <option value="register_cash">レジ現金</option>
+              <option value="other_cash">別現金</option>
+              <option value="bank">銀行振込</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="addDailyPay()">登録する</button>
+      </div>
+
+      <div class="card">
+        <h3>今日の日払い記録</h3>
+        <div id="daily-pay-list"><p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p></div>
+      </div>
+    </section>
+
+    <!-- 今日の営業 -->
+    <section class="view" id="view-report">
+      <h1 class="page-title">今日の営業</h1>
+      <p class="page-sub">表示されている項目だけ入力すればOKです。使う項目は「設定」からいつでも変更できます</p>
+
+      <div class="card" id="report-closed-banner" style="display:none;background:var(--brass-soft);border-color:var(--brass);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-weight:700;color:#8a611f;">🔒 今日の営業は締め済みです</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">内容を修正するには、管理者権限で締めを解除してください</div>
+          </div>
+          <button class="btn ghost sm" onclick="reopenReport()">管理者として締めを解除する</button>
+        </div>
+      </div>
+
+      <fieldset id="report-fields" style="border:none;padding:0;margin:0;">
+      <div class="card" id="card-sales">
+        <h3>売上<span id="sales-by-payment-note" style="font-size:11px;color:var(--ink-soft);font-weight:400;">（決済方法別）</span></h3>
+        <div class="form-grid" id="sales-by-payment-fields">
+          <div><label>現金</label><input type="number" id="sales-cash" placeholder="0" oninput="updateReportTotals()"></div>
+          <div><label>クレジットカード</label><input type="number" id="sales-card" placeholder="0" oninput="updateReportTotals()"></div>
+          <div><label>QR・電子決済</label><input type="number" id="sales-qr" placeholder="0" oninput="updateReportTotals()"></div>
+          <div><label>その他</label><input type="number" id="sales-other" placeholder="0" oninput="updateReportTotals()"></div>
+        </div>
+        <div class="label">総売上</div>
+        <div class="value money" id="sales-total">0</div>
+      </div>
+
+      <div class="card" id="card-visitors">
+        <h3>来店</h3>
+        <div class="form-grid">
+          <div id="field-visitor-groups"><label>来店組数</label><input type="number" id="visitor-groups" placeholder="例：8"></div>
+          <div id="field-visitor-count"><label>来店人数</label><input type="number" id="visitor-count" placeholder="例：15"></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-expenses">
+        <h3>経費・仕入</h3>
+        <div class="form-grid">
+          <div><label>内容</label><input type="text" id="exp-label" placeholder="例：氷・タクシー代"></div>
+          <div><label>金額（円）</label><input type="number" id="exp-amount" placeholder="0"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>支払方法</label>
+            <select id="exp-source">
+              <option value="register_cash">レジ現金</option>
+              <option value="bank">銀行振込</option>
+              <option value="card">クレジットカード</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn ghost sm" onclick="addExpense()">追加する</button>
+        <div id="expense-list" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card" id="card-notes">
+        <h3>営業メモ</h3>
+        <textarea id="business-note" rows="3" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;" placeholder="引継ぎ事項やトラブルがあれば記入してください"></textarea>
+      </div>
+
+      <div class="card" id="card-cash-count">
+        <h3>金種を数える</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">お札・硬貨の枚数を入力すると、レジにある金額を自動計算します</p>
+        <div id="denom-wrap"></div>
+        <div style="margin-top:10px;padding-top:12px;border-top:1px dashed var(--line);">
+          <div class="label">現金実在高（実際にレジにある金額）</div>
+          <div class="value money" id="cash-actual">0</div>
+        </div>
+      </div>
+
+      <div class="card" id="card-cash-closing">
+        <h3>レジ締め</h3>
+        <div class="grid2">
+          <div><div class="label">理論現金残高（レジ準備金＋現金売上－現金支出）</div><div class="value money" id="cash-theoretical">30,000</div></div>
+          <div><div class="label">現金差額</div><div class="value money" id="cash-diff">0</div></div>
+        </div>
+        <button class="btn" style="margin-top:12px;" id="close-report-btn" onclick="closeReport()">今日の営業を締める</button>
+      </div>
+      </fieldset>
+
+      <div class="card" id="report-empty-notice" style="display:none;text-align:center;color:var(--ink-soft);">
+        <p style="margin:0;font-size:13px;">今日の営業で使う項目が設定されていません。<br>「設定」から使いたい項目を選んでください。</p>
+        <button class="btn ghost sm" style="margin-top:10px;" onclick="goTo('settings')">設定を開く →</button>
+      </div>
+    </section>
+
+    <!-- 給与 -->
+    <section class="view" id="view-payroll">
+      <h1 class="page-title">給与</h1>
+      <p class="page-sub">勤務時間・バック・日払いから、今月の給与見込みを自動計算します</p>
+      <div class="card">
+        <table>
+          <thead><tr><th>スタッフ</th><th class="right">勤務時間</th><th class="right">基本給</th><th class="right">バック</th><th class="right">日払い</th><th class="right">支給見込</th><th></th></tr></thead>
+          <tbody id="payroll-table"></tbody>
+        </table>
+      </div>
+
+      <!-- 給与明細・受領サイン モーダル -->
+      <div id="payslip-modal" style="display:none;position:fixed;inset:0;background:rgba(28,24,21,.5);z-index:150;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#fff;border-radius:14px;padding:22px;max-width:400px;width:100%;max-height:92vh;overflow-y:auto;">
+          <h3 style="margin:0 0 4px;" id="payslip-staff-name">給与明細</h3>
+          <p style="font-size:12px;color:var(--ink-soft);margin:0 0 16px;" id="payslip-period">対象期間：今月分</p>
+
+          <table style="width:100%;font-size:13.5px;margin-bottom:14px;">
+            <tbody id="payslip-detail-table"></tbody>
+          </table>
+
+          <div style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+            <div class="label">最終支給額</div>
+            <div class="value money" id="payslip-final" style="font-size:26px;">0</div>
+          </div>
+
+          <div id="payslip-signature-section">
+            <div class="label" style="margin-bottom:8px;">受領サイン（ご本人がこの画面にサインしてください）</div>
+            <canvas id="signature-canvas" width="340" height="120" style="border:1px solid var(--line);border-radius:8px;width:100%;touch-action:none;background:#fbfaf8;"></canvas>
+            <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+              <button class="btn ghost sm" onclick="clearSignature()">サインをやり直す</button>
+            </div>
+          </div>
+
+          <div id="payslip-confirmed-note" style="display:none;background:var(--good-soft);color:var(--good);border-radius:8px;padding:10px 12px;font-size:12.5px;margin-top:10px;">
+            ✓ <span id="payslip-confirmed-text"></span>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+            <button class="btn ghost sm" onclick="closePayslipModal()">閉じる</button>
+            <button class="btn sm" id="payslip-confirm-btn" onclick="confirmPayslip()">受領サインして確定する</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 月次集計 -->
+    <section class="view" id="view-monthly">
+      <h1 class="page-title">月次集計</h1>
+      <p class="page-sub" id="monthly-period-label">今月の集計</p>
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:-14px;">※デモ環境のため、本日入力した分のみが反映されます。実際の画面では月初からの累計が自動集計されます。</p>
+
+      <div class="grid2">
+        <div class="card"><div class="label">総売上</div><div class="value money" id="m-total-sales">0</div></div>
+        <div class="card"><div class="label">営業日数</div><div class="value" id="m-business-days">0日</div></div>
+      </div>
+      <div class="grid3">
+        <div class="card"><div class="label">現金売上</div><div class="value money" id="m-cash-sales">0</div></div>
+        <div class="card"><div class="label">カード</div><div class="value money" id="m-card-sales">0</div></div>
+        <div class="card"><div class="label">電子決済</div><div class="value money" id="m-qr-sales">0</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="label">来店組数</div><div class="value" id="m-visitor-groups">0組</div></div>
+        <div class="card"><div class="label">客単価</div><div class="value money" id="m-avg-spend">0</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="label">給与合計（バック含む）</div><div class="value money" id="m-payroll-total">0</div></div>
+        <div class="card"><div class="label">人件費率<span style="font-weight:400;color:var(--ink-soft);font-size:11px;">（給与÷売上）</span></div><div class="value" id="m-labor-rate">0%</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="label">経費・仕入合計</div><div class="value money" id="m-expense-total">0</div></div>
+        <div class="card"><div class="label">現金差額（本日分）</div><div class="value money" id="m-cash-diff">0</div></div>
+      </div>
+    </section>
+
+    <!-- 設定：日次管理設定 -->
+    <section class="view" id="view-settings">
+      <h1 class="page-title">設定</h1>
+      <p class="page-sub">お店の基本情報や、日々の入力項目を設定します</p>
+
+      <div class="card">
+        <h3>店舗の基本設定</h3>
+        <div class="form-grid">
+          <div><label>店舗名</label><input type="text" id="set-store-name" oninput="onStoreSettingChange()"></div>
+          <div><label>基本時給（円）<span style="font-weight:400;color:var(--ink-soft);">　※新規スタッフ登録時の初期値</span></label><input type="number" id="set-base-wage" min="0" step="10" oninput="onStoreSettingChange()"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>締め日</label>
+            <select id="set-closing-day" onchange="onStoreSettingChange()">
+              <option value="末日">末日</option><option value="15日">15日</option><option value="20日">20日</option><option value="25日">25日</option>
+            </select>
+          </div>
+          <div><label>給与支払日</label>
+            <select id="set-payday" onchange="onStoreSettingChange()">
+              <option value="当月末日">当月末日</option><option value="翌月5日">翌月5日</option><option value="翌月10日">翌月10日</option><option value="翌月25日">翌月25日</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div><label>開店時間</label><input type="time" id="set-open-time" onchange="onStoreSettingChange()"></div>
+          <div><label>閉店時間</label><input type="time" id="set-close-time" onchange="onStoreSettingChange()"></div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label>営業日の切替時刻<span style="font-weight:400;color:var(--ink-soft);">　※深夜営業対応</span></label>
+            <input type="time" id="set-night-switch" onchange="onStoreSettingChange()">
+            <span style="font-size:11px;color:var(--ink-soft);display:block;margin-top:4px;">例：5:00に設定すると、深夜2時の退勤も「前日の営業日」として記録されます</span>
+          </div>
+          <div>
+            <label>レジ準備金（円）</label>
+            <input type="number" id="set-register-float" min="0" step="1000" onchange="onStoreSettingChange()">
+            <span style="font-size:11px;color:var(--ink-soft);display:block;margin-top:4px;">営業開始時にレジへ入れておく現金。現金締めの計算に使われます</span>
+          </div>
+        </div>
+        <div id="store-settings-saved-note" style="font-size:12px;color:var(--good);margin-top:8px;display:none;">✓ 保存しました</div>
+      </div>
+
+      <div class="card">
+        <h3>おすすめの組み合わせ</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn ghost sm" onclick="applyPreset('simple')">まず簡単に使いたい</button>
+          <button class="btn ghost sm" onclick="applyPreset('cashOnly')">金種だけ数えたい</button>
+          <button class="btn ghost sm" onclick="applyPreset('cashClosing')">レジの差額まで確認したい</button>
+          <button class="btn ghost sm" onclick="applyPreset('all')">店舗全体を管理したい</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>今日の営業で使う項目</h3>
+        <div id="daily-settings-list"></div>
+      </div>
+
+      <div class="card">
+        <h3>お支払い・契約管理</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <div>
+            <div class="label">現在のプラン</div>
+            <div class="value" style="font-size:18px;" id="current-plan-label">STANDARD（無料体験中）</div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;" id="trial-remain-label">無料体験はあと 9 日で終了します</div>
+          </div>
+          <button class="btn ghost sm" onclick="openBillingPortal()">お支払い・契約管理を開く</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:0;">カードの変更・プラン変更・解約は、こちらから安全な決済画面（Stripe）で行えます。</p>
+      </div>
+
+      <div class="card">
+        <h3>使い方・ヘルプ</h3>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 12px;">操作方法やよくある質問は、いつでもここから確認できます。</p>
+        <button class="btn ghost sm" onclick="goTo('help')">使い方・ヘルプを開く →</button>
+      </div>
+    </section>
+
+    <!-- 使い方・ヘルプ -->
+    <section class="view" id="view-help">
+      <h1 class="page-title">使い方・ヘルプ</h1>
+      <p class="page-sub">操作に迷ったら、まずはここで検索してみてください</p>
+
+      <div class="card">
+        <input type="text" id="help-search-input" placeholder="🔍 例：日払い、金種、時給変更" oninput="renderHelpArticles()">
+      </div>
+
+      <div class="card" id="help-category-card">
+        <h3>カテゴリーから探す</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="help-category-buttons"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="help-articles-title">はじめての方へ</h3>
+        <div id="help-articles-list"></div>
+      </div>
+
+      <div class="card">
+        <h3>よくある質問</h3>
+        <div id="help-faq-list"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<nav class="bottomnav">
+  <button class="active" data-view="home"><span class="ic">🏠</span>ホーム</button>
+  <button data-view="attendance"><span class="ic">⏱</span>勤怠</button>
+  <button data-view="report"><span class="ic">📋</span>今日の営業</button>
+  <button data-view="payroll"><span class="ic">💴</span>給与</button>
+  <button data-view="backs"><span class="ic">🍾</span>バック</button>
+  <button data-view="settings"><span class="ic">⚙️</span>設定</button>
+</nav>
+
+<script>
+// ---- デモ用ダミーデータ（保存されません。セッション内のみ） ----
+const staff = [
+  {id:'a', name:'スタッフA', loginId:'a-staff', wage:1500, joinedAt:'2025-04-01', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'},
+  {id:'b', name:'スタッフB', loginId:'b-staff', wage:1400, joinedAt:'2025-06-15', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'},
+  {id:'c', name:'スタッフC', loginId:'c-staff', wage:1300, joinedAt:'2026-02-01', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'},
+];
+let backItems = [
+  {id:'drink', name:'ドリンク', category:'基本', salePrice:1000, backAmount:300, active:true, sortOrder:1},
+  {id:'yoyaku', name:'予約', category:'基本', salePrice:null, backAmount:1000, active:true, sortOrder:2},
+  {id:'douhan', name:'同伴', category:'基本', salePrice:null, backAmount:2000, active:true, sortOrder:3},
+];
+let backRecords = [];   // {staffId, itemId}
+let dailyPays = [];     // {staffId, amount, source}
+let expenses = [];      // {label, amount, source}
+const denominations = [10000,5000,1000,500,100,50,10,5,1];
+let denomCounts = {};
+let reportClosed = false;
+
+function yen(n){ return Math.round(n).toLocaleString('ja-JP'); }
+
+// ---- タブ切り替え ----
+// ---- 店舗の基本設定 ----
+let storeSettings = {
+  storeName: 'DEMO LOUNGE',
+  baseWage: 1300,
+  closingDay: '末日',
+  payday: '翌月10日',
+  openTime: '20:00',
+  closeTime: '02:00',
+  nightSwitchTime: '05:00',
+  registerFloat: 30000,
+};
+
+function renderStoreSettingsForm(){
+  document.getElementById('set-store-name').value = storeSettings.storeName;
+  document.getElementById('set-base-wage').value = storeSettings.baseWage;
+  document.getElementById('set-closing-day').value = storeSettings.closingDay;
+  document.getElementById('set-payday').value = storeSettings.payday;
+  document.getElementById('set-open-time').value = storeSettings.openTime;
+  document.getElementById('set-close-time').value = storeSettings.closeTime;
+  document.getElementById('set-night-switch').value = storeSettings.nightSwitchTime;
+  document.getElementById('set-register-float').value = storeSettings.registerFloat;
+}
+
+window.onStoreSettingChange = function(){
+  storeSettings.storeName = document.getElementById('set-store-name').value.trim() || 'DEMO LOUNGE';
+  storeSettings.baseWage = parseFloat(document.getElementById('set-base-wage').value) || 0;
+  storeSettings.closingDay = document.getElementById('set-closing-day').value;
+  storeSettings.payday = document.getElementById('set-payday').value;
+  storeSettings.openTime = document.getElementById('set-open-time').value;
+  storeSettings.closeTime = document.getElementById('set-close-time').value;
+  storeSettings.nightSwitchTime = document.getElementById('set-night-switch').value;
+  storeSettings.registerFloat = parseFloat(document.getElementById('set-register-float').value) || 0;
+
+  // 店舗名を各所へ反映
+  document.getElementById('sidenav-store-name').textContent = storeSettings.storeName;
+  document.getElementById('home-store-name').textContent = storeSettings.storeName;
+
+  // レジ準備金の変更を現金締めの計算へ即反映
+  updateCashClosing();
+
+  // 新規スタッフ登録フォームの時給欄に基本時給をデフォルト表示
+  const newWageField = document.getElementById('new-staff-wage');
+  if(newWageField && !newWageField.value) newWageField.placeholder = `例：${storeSettings.baseWage}（基本時給）`;
+
+  const note = document.getElementById('store-settings-saved-note');
+  note.style.display = 'block';
+  clearTimeout(window._storeSettingsNoteTimer);
+  window._storeSettingsNoteTimer = setTimeout(()=>{ note.style.display = 'none'; }, 1800);
+};
+
+// ---- 日次管理設定：店舗ごとに「今日の営業」で使う項目を選ぶ ----
+const dailySettingLabels = [
+  {key:'sales', label:'売上を管理する', cardIds:['card-sales']},
+  {key:'salesByPayment', label:'決済方法ごとに分けて入力する', dependsOn:'sales'},
+  {key:'visitorGroups', label:'来店組数を記録する', cardIds:['card-visitors']},
+  {key:'visitorCount', label:'来店人数を記録する', cardIds:['card-visitors']},
+  {key:'expenses', label:'経費・仕入を記録する', cardIds:['card-expenses']},
+  {key:'notes', label:'営業メモを残す', cardIds:['card-notes']},
+  {key:'cashCount', label:'金種を数える', cardIds:['card-cash-count']},
+  {key:'cashClosing', label:'レジの現金差額を確認する（現金締め）', cardIds:['card-cash-closing']},
+];
+let dailySettings = {
+  sales:true, salesByPayment:true, visitorGroups:true, visitorCount:true,
+  expenses:true, notes:false, cashCount:true, cashClosing:true,
+};
+
+function renderDailySettingsList(){
+  const wrap = document.getElementById('daily-settings-list');
+  wrap.innerHTML = dailySettingLabels.map(item=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:14px;">
+      <input type="checkbox" style="width:auto;" ${dailySettings[item.key] ? 'checked' : ''} onchange="toggleDailySetting('${item.key}', this.checked)">
+      ${item.label}
+    </label>`).join('');
+}
+window.toggleDailySetting = function(key, checked){
+  dailySettings[key] = checked;
+  applyDailySettings();
+};
+window.applyPreset = function(preset){
+  const presets = {
+    simple:      {sales:false, salesByPayment:false, visitorGroups:false, visitorCount:false, expenses:false, notes:false, cashCount:false, cashClosing:false},
+    cashOnly:    {sales:false, salesByPayment:false, visitorGroups:false, visitorCount:false, expenses:false, notes:false, cashCount:true,  cashClosing:false},
+    cashClosing: {sales:true,  salesByPayment:true,  visitorGroups:false, visitorCount:false, expenses:true,  notes:false, cashCount:true,  cashClosing:true},
+    all:         {sales:true,  salesByPayment:true,  visitorGroups:true,  visitorCount:true,  expenses:true,  notes:true,  cashCount:true,  cashClosing:true},
+  };
+  dailySettings = presets[preset];
+  renderDailySettingsList();
+  applyDailySettings();
+  showToastMini(`「${ {simple:'まず簡単に使いたい', cashOnly:'金種だけ数えたい', cashClosing:'レジの差額まで確認したい', all:'店舗全体を管理したい'}[preset] }」の設定にしました`);
+};
+function showToastMini(msg){
+  let el = document.getElementById('mini-toast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'mini-toast';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--dusk-deep);color:#fff;padding:9px 16px;border-radius:20px;font-size:12.5px;z-index:200;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>{ el.style.display='none'; }, 2200);
+}
+
+function applyDailySettings(){
+  const show = (id, on) => { const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
+  show('card-sales', dailySettings.sales);
+  show('card-visitors', dailySettings.visitorGroups || dailySettings.visitorCount);
+  show('card-expenses', dailySettings.expenses);
+  show('card-notes', dailySettings.notes);
+  show('card-cash-count', dailySettings.cashCount);
+  show('card-cash-closing', dailySettings.cashClosing);
+
+  // 売上カード内：決済方法別かどうかで見た目を調整
+  const salesNote = document.getElementById('sales-by-payment-note');
+  if(salesNote) salesNote.style.display = dailySettings.salesByPayment ? 'inline' : 'none';
+
+  // 来店カード内：組数／人数を個別にON/OFF
+  const groupsField = document.getElementById('field-visitor-groups');
+  const countField = document.getElementById('field-visitor-count');
+  if(groupsField) groupsField.style.display = dailySettings.visitorGroups ? '' : 'none';
+  if(countField) countField.style.display = dailySettings.visitorCount ? '' : 'none';
+
+  // どの項目も使っていない場合の空状態表示
+  const anyOn = dailySettings.sales || dailySettings.visitorGroups || dailySettings.visitorCount ||
+                dailySettings.expenses || dailySettings.notes || dailySettings.cashCount || dailySettings.cashClosing;
+  const notice = document.getElementById('report-empty-notice');
+  if(notice) notice.style.display = anyOn ? 'none' : 'block';
+}
+
+function goTo(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-item,.bottomnav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.view===view);
+  });
+  if(view==='monthly') renderMonthly();
+  if(view==='help'){ renderHelpCategories(); renderHelpArticles(); renderHelpFaq(); }
+}
+document.querySelectorAll('.nav-item,.bottomnav button').forEach(b=>{
+  b.addEventListener('click', ()=>goTo(b.dataset.view));
+});
+
+// ---- スタッフ管理：時給編集・追加・退職・再雇用 ----
+function renderStaffManageList(){
+  const wrap = document.getElementById('staff-manage-list');
+  const active = staff.filter(s=>s.status!=='retired');
+  wrap.innerHTML = active.map(s=>`
+    <div class="staff-row">
+      <div style="flex:1;">
+        <div class="staff-name">${s.name}</div>
+        <div class="staff-status">ID: ${s.loginId || '未設定'}　／　入店日: ${s.joinedAt || '未設定'}</div>
+        <div class="form-grid" style="grid-template-columns:auto 1fr;align-items:center;gap:6px;margin:6px 0 0;max-width:220px;">
+          <label style="margin:0;">時給</label>
+          <input type="number" value="${s.wage}" min="0" step="10"
+                 onchange="updateStaffWage('${s.id}', this.value)">
+        </div>
+      </div>
+      <button class="btn ghost sm" onclick="retireStaff('${s.id}')">退職として処理</button>
+    </div>`).join('');
+
+  const retired = staff.filter(s=>s.status==='retired');
+  const retiredCard = document.getElementById('retired-staff-card');
+  retiredCard.style.display = retired.length ? 'block' : 'none';
+  document.getElementById('retired-staff-list').innerHTML = retired.map(s=>`
+    <div class="staff-row">
+      <div><div class="staff-name">${s.name}</div><div class="staff-status">退店日: ${s.retiredAt || '-'}</div></div>
+      <button class="btn ghost sm" onclick="reactivateStaff('${s.id}')">再雇用する</button>
+    </div>`).join('');
+}
+window.updateStaffWage = function(id, val){
+  const wage = parseFloat(val);
+  if(isNaN(wage) || wage<0){ alert('正しい時給を入力してください'); renderStaffManageList(); return; }
+  staff.find(s=>s.id===id).wage = wage;
+  renderPayroll();
+};
+window.addStaff = function(){
+  const name = document.getElementById('new-staff-name').value.trim();
+  const loginId = document.getElementById('new-staff-login').value.trim();
+  const wage = parseFloat(document.getElementById('new-staff-wage').value);
+  const joinedAt = document.getElementById('new-staff-joined').value || new Date().toISOString().slice(0,10);
+  if(!name || isNaN(wage) || wage<=0){ alert('名前と時給を正しく入力してください'); return; }
+  const id = 's' + Date.now().toString(36);
+  staff.push({id, name, loginId, wage, joinedAt, retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'});
+  document.getElementById('new-staff-name').value='';
+  document.getElementById('new-staff-login').value='';
+  document.getElementById('new-staff-wage').value='';
+  document.getElementById('new-staff-joined').value='';
+  renderStaffManageList();
+  renderStaffList();
+  populateSelects();
+  renderPayroll();
+};
+window.retireStaff = function(id){
+  const s = staff.find(x=>x.id===id);
+  if(!confirm(`${s.name} を退職として処理しますか？（出退勤・登録の対象から外れます）`)) return;
+  s.status = 'retired';
+  s.retiredAt = new Date().toISOString().slice(0,10);
+  renderStaffManageList();
+  renderStaffList();
+  populateSelects();
+  renderPayroll();
+};
+window.reactivateStaff = function(id){
+  const s = staff.find(x=>x.id===id);
+  s.status = 'active';
+  s.retiredAt = null;
+  renderStaffManageList();
+  renderStaffList();
+  populateSelects();
+  renderPayroll();
+};
+
+
+function setAttendanceMode(mode){
+  document.getElementById('kiosk-view').style.display = mode==='kiosk' ? 'block' : 'none';
+  document.getElementById('staff-view').style.display = mode==='staff' ? 'block' : 'none';
+  document.getElementById('mode-kiosk-btn').classList.toggle('ghost', mode!=='kiosk');
+  document.getElementById('mode-staff-btn').classList.toggle('ghost', mode!=='staff');
+}
+window.setAttendanceMode = setAttendanceMode;
+
+// QRトークンの発行・更新をシミュレート（実際はgenerate-attendance-qr関数がサーバー側で発行）
+let qrSecondsLeft = 30;
+function issueNewQrToken(){
+  const token = Math.random().toString(36).slice(2,10);
+  document.getElementById('qr-token-display').textContent = token;
+  qrSecondsLeft = 30;
+}
+setInterval(()=>{
+  qrSecondsLeft--;
+  if(qrSecondsLeft<=0) issueNewQrToken();
+  const timerEl = document.getElementById('qr-timer');
+  if(timerEl) timerEl.textContent = `あと ${qrSecondsLeft} 秒で更新`;
+}, 1000);
+
+// ---- 勤怠：出退勤 ----
+function nowStr(){
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+// 「営業日の切替時刻」をもとに、今この瞬間がどの営業日に属するかを計算する。
+// 例：切替時刻5:00の場合、深夜2:00の打刻は「前日の営業日」として扱われる。
+function currentBusinessDate(){
+  const now = new Date();
+  const [swH, swM] = (storeSettings.nightSwitchTime || '05:00').split(':').map(Number);
+  const switchMinutes = swH*60 + swM;
+  const nowMinutes = now.getHours()*60 + now.getMinutes();
+  const businessDate = new Date(now);
+  if(nowMinutes < switchMinutes){
+    businessDate.setDate(businessDate.getDate() - 1); // 切替時刻より前＝前日の営業日
+  }
+  return businessDate;
+}
+function formatBusinessDate(d){
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function renderStaffList(){
+  const wrap = document.getElementById('staff-list');
+  wrap.innerHTML = staff.filter(s=>s.status!=='retired').map(s=>{
+    const working = s.clockIn && !s.clockOut;
+    const methodTag = (m)=> m==='admin_manual' ? '<span class="badge warn" style="margin-left:6px;">手動修正</span>' : '';
+    const bizDateTag = s.businessDate ? `<span class="sub-note" style="display:inline;margin-left:6px;">（営業日：${s.businessDate}）</span>` : '';
+    let statusText = '未出勤';
+    if(working) statusText = `${s.clockIn} 〜 出勤中${methodTag(s.clockInMethod)}${bizDateTag}`;
+    if(s.clockIn && s.clockOut) statusText = `${s.clockIn} 〜 ${s.clockOut}（退勤済）${methodTag(s.clockOutMethod)}${bizDateTag}`;
+    return `<div class="staff-row">
+      <div><div class="staff-name">${s.name}</div><div class="staff-status ${working?'working':''}">${statusText}</div></div>
+      <div>
+        ${!s.clockIn ? `<button class="btn sm" onclick="clockIn('${s.id}')">QRで出勤する</button>` : ''}
+        ${s.clockIn && !s.clockOut ? `<button class="btn sm ghost" onclick="clockOut('${s.id}')">QRで退勤する</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('home-working-count').textContent = staff.filter(s=>s.status!=='retired' && s.clockIn && !s.clockOut).length + '人';
+}
+window.clockIn = function(id){
+  const s = staff.find(s=>s.id===id);
+  s.clockIn = nowStr(); s.clockInMethod = 'qr';
+  s.businessDate = formatBusinessDate(currentBusinessDate());
+  renderStaffList(); renderPayroll();
+};
+window.clockOut = function(id){
+  const s = staff.find(s=>s.id===id);
+  s.clockOut = nowStr(); s.clockOutMethod = 'qr';
+  renderStaffList(); renderPayroll();
+};
+
+// ---- 勤怠：管理者による手動修正 ----
+window.openAdminEdit = function(){
+  document.getElementById('admin-edit-staff').innerHTML = staff.filter(s=>s.status!=='retired').map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('admin-edit-time').value = '';
+  document.getElementById('admin-edit-reason').value = '';
+  document.getElementById('admin-edit-modal').style.display = 'flex';
+};
+window.closeAdminEdit = function(){
+  document.getElementById('admin-edit-modal').style.display = 'none';
+};
+window.submitAdminEdit = function(){
+  const staffId = document.getElementById('admin-edit-staff').value;
+  const type = document.getElementById('admin-edit-type').value;
+  const time = document.getElementById('admin-edit-time').value;
+  const reason = document.getElementById('admin-edit-reason').value.trim();
+  if(!time || !reason){ alert('時刻と修正理由を入力してください（修正履歴として記録されます）'); return; }
+  const s = staff.find(x=>x.id===staffId);
+  if(type==='clock_in'){ s.clockIn = time; s.clockInMethod = 'admin_manual'; s.businessDate = formatBusinessDate(currentBusinessDate()); }
+  else { s.clockOut = time; s.clockOutMethod = 'admin_manual'; }
+  s.edited = true;
+  closeAdminEdit();
+  renderStaffList();
+  renderPayroll();
+  alert('修正しました。実際の画面では「誰が・いつ・なぜ修正したか」が履歴として残ります。');
+};
+
+// ---- バック ----
+// ---- バック項目の管理：追加・有効/無効・並べ替え ----
+function renderBackItemManageList(){
+  const wrap = document.getElementById('back-item-manage-list');
+  const sorted = backItems.slice().sort((a,b)=>a.sortOrder-b.sortOrder);
+  wrap.innerHTML = sorted.map((item,idx)=>`
+    <div class="staff-row" style="${item.active ? '' : 'opacity:.5;'}">
+      <div style="flex:1;">
+        <div class="staff-name">${item.name}<span class="store-tag" style="display:inline-block;font-size:10px;padding:1px 8px;border-radius:20px;background:var(--bg);border:1px solid var(--line);color:var(--ink-soft);margin-left:6px;">${item.category}</span></div>
+        <div class="form-grid" style="grid-template-columns:auto 1fr auto 1fr;align-items:center;gap:6px;margin:6px 0 0;max-width:340px;">
+          <label style="margin:0;">販売価格</label>
+          <input type="number" value="${item.salePrice ?? ''}" placeholder="任意" min="0" onchange="updateBackItem('${item.id}','salePrice',this.value)">
+          <label style="margin:0;">バック</label>
+          <input type="number" value="${item.backAmount}" min="0" onchange="updateBackItem('${item.id}','backAmount',this.value)">
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+        <button class="btn ghost sm" onclick="toggleBackItemActive('${item.id}')">${item.active ? '無効にする' : '有効にする'}</button>
+        <div style="display:flex;gap:4px;">
+          <button class="icon-btn" title="上へ" onclick="moveBackItem('${item.id}',-1)" ${idx===0?'disabled':''}>↑</button>
+          <button class="icon-btn" title="下へ" onclick="moveBackItem('${item.id}',1)" ${idx===sorted.length-1?'disabled':''}>↓</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+window.updateBackItem = function(id, field, val){
+  const item = backItems.find(i=>i.id===id);
+  const num = val === '' ? null : parseFloat(val);
+  if(field==='backAmount' && (num===null || isNaN(num) || num<0)){ alert('正しいバック金額を入力してください'); renderBackItemManageList(); return; }
+  item[field] = num;
+  populateSelects();
+  renderBackRecords();
+  renderPayroll();
+};
+window.toggleBackItemActive = function(id){
+  const item = backItems.find(i=>i.id===id);
+  item.active = !item.active;
+  renderBackItemManageList();
+  populateSelects();
+};
+window.moveBackItem = function(id, dir){
+  const sorted = backItems.slice().sort((a,b)=>a.sortOrder-b.sortOrder);
+  const idx = sorted.findIndex(i=>i.id===id);
+  const swapIdx = idx + dir;
+  if(swapIdx<0 || swapIdx>=sorted.length) return;
+  const a = sorted[idx], b = sorted[swapIdx];
+  const tmp = a.sortOrder; a.sortOrder = b.sortOrder; b.sortOrder = tmp;
+  renderBackItemManageList();
+  populateSelects();
+};
+window.addBackItem = function(){
+  const name = document.getElementById('new-backitem-name').value.trim();
+  const category = document.getElementById('new-backitem-category').value;
+  const priceVal = document.getElementById('new-backitem-price').value;
+  const backVal = document.getElementById('new-backitem-back').value;
+  const backAmount = parseFloat(backVal);
+  if(!name || isNaN(backAmount) || backAmount<0){ alert('項目名とバック金額を正しく入力してください'); return; }
+  const salePrice = priceVal === '' ? null : parseFloat(priceVal);
+  const maxOrder = backItems.reduce((m,i)=>Math.max(m,i.sortOrder), 0);
+  backItems.push({id:'bi'+Date.now().toString(36), name, category, salePrice, backAmount, active:true, sortOrder:maxOrder+1});
+  document.getElementById('new-backitem-name').value='';
+  document.getElementById('new-backitem-price').value='';
+  document.getElementById('new-backitem-back').value='';
+  renderBackItemManageList();
+  populateSelects();
+  showToastMini(`「${name}」を追加しました`);
+};
+
+function populateSelects(){
+  const staffOpts = staff.filter(s=>s.status!=='retired').map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('back-staff').innerHTML = staffOpts;
+  document.getElementById('pay-staff').innerHTML = staffOpts;
+  const activeBackItems = backItems.filter(i=>i.active).sort((a,b)=>a.sortOrder-b.sortOrder);
+  document.getElementById('back-item').innerHTML = activeBackItems.map(i=>`<option value="${i.id}">${i.name}（¥${yen(i.backAmount)}）</option>`).join('');
+}
+window.addBackRecord = function(){
+  const staffId = document.getElementById('back-staff').value;
+  const itemId = document.getElementById('back-item').value;
+  backRecords.push({staffId, itemId});
+  renderBackRecords();
+  renderPayroll();
+};
+function renderBackRecords(){
+  const wrap = document.getElementById('back-records-list');
+  if(backRecords.length===0){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p>'; document.getElementById('home-back-total').textContent = yen(0); return; }
+  let total = 0;
+  wrap.innerHTML = '<table><thead><tr><th>スタッフ</th><th>項目</th><th class="right">金額</th></tr></thead><tbody>' +
+    backRecords.map(r=>{
+      const s = staff.find(x=>x.id===r.staffId), item = backItems.find(x=>x.id===r.itemId);
+      total += item.backAmount;
+      return `<tr><td>${s.name}</td><td>${item.name}</td><td class="right">¥${yen(item.backAmount)}</td></tr>`;
+    }).join('') + '</tbody></table>';
+  document.getElementById('home-back-total').textContent = yen(total);
+}
+window.addDailyPay = function(){
+  const staffId = document.getElementById('pay-staff').value;
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  const source = document.getElementById('pay-source').value;
+  if(isNaN(amount) || amount<=0){ alert('金額を入力してください'); return; }
+  dailyPays.push({staffId, amount, source});
+  document.getElementById('pay-amount').value='';
+  renderDailyPays();
+  renderPayroll();
+  updateReportTotals();
+}
+function renderDailyPays(){
+  const wrap = document.getElementById('daily-pay-list');
+  if(dailyPays.length===0){ wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p>'; document.getElementById('home-dailypay').textContent='0'; return; }
+  const sourceLabel = {register_cash:'レジ現金', other_cash:'別現金', bank:'銀行振込'};
+  let total = 0;
+  wrap.innerHTML = '<table><thead><tr><th>スタッフ</th><th>支払方法</th><th class="right">金額</th></tr></thead><tbody>' +
+    dailyPays.map(p=>{
+      const s = staff.find(x=>x.id===p.staffId);
+      total += p.amount;
+      return `<tr><td>${s.name}</td><td>${sourceLabel[p.source]}</td><td class="right">¥${yen(p.amount)}</td></tr>`;
+    }).join('') + '</tbody></table>';
+  document.getElementById('home-dailypay').textContent = yen(total);
+}
+
+// ---- 今日の営業（売上・経費・金種・レジ締め） ----
+function updateReportTotals(){
+  const cash = parseFloat(document.getElementById('sales-cash').value)||0;
+  const card = parseFloat(document.getElementById('sales-card').value)||0;
+  const qr = parseFloat(document.getElementById('sales-qr').value)||0;
+  const other = parseFloat(document.getElementById('sales-other').value)||0;
+  document.getElementById('sales-total').textContent = yen(cash+card+qr+other);
+  updateCashClosing();
+}
+window.addExpense = function(){
+  const label = document.getElementById('exp-label').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const source = document.getElementById('exp-source').value;
+  if(!label || isNaN(amount) || amount<=0){ alert('内容と金額を入力してください'); return; }
+  expenses.push({label, amount, source});
+  document.getElementById('exp-label').value='';
+  document.getElementById('exp-amount').value='';
+  renderExpenses();
+  updateCashClosing();
+}
+function renderExpenses(){
+  const wrap = document.getElementById('expense-list');
+  const sourceLabel = {register_cash:'レジ現金', bank:'銀行振込', card:'クレジットカード'};
+  if(expenses.length===0){ wrap.innerHTML=''; return; }
+  wrap.innerHTML = '<table><thead><tr><th>内容</th><th>支払方法</th><th class="right">金額</th></tr></thead><tbody>' +
+    expenses.map(e=>`<tr><td>${e.label}</td><td>${sourceLabel[e.source]}</td><td class="right">¥${yen(e.amount)}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+function renderDenominations(){
+  const wrap = document.getElementById('denom-wrap');
+  wrap.innerHTML = denominations.map(d=>`
+    <div class="denom-row">
+      <div class="d">¥${yen(d)}${d>=1000?'札':'硬貨'}</div>
+      <input type="number" min="0" placeholder="枚数" oninput="onDenomInput(${d}, this.value)">
+      <div class="sub" id="denom-sub-${d}">¥0</div>
+    </div>`).join('');
+}
+window.onDenomInput = function(d, val){
+  const count = parseInt(val)||0;
+  denomCounts[d] = count;
+  document.getElementById('denom-sub-'+d).textContent = '¥'+yen(count*d);
+  updateCashClosing();
+}
+function updateCashClosing(){
+  const actual = denominations.reduce((sum,d)=> sum + (denomCounts[d]||0)*d, 0);
+  document.getElementById('cash-actual').textContent = yen(actual);
+
+  const cashSales = parseFloat(document.getElementById('sales-cash').value)||0;
+  const cashPayOut = dailyPays.filter(p=>p.source==='register_cash').reduce((s,p)=>s+p.amount,0);
+  const cashExpOut = expenses.filter(e=>e.source==='register_cash').reduce((s,e)=>s+e.amount,0);
+  const theoretical = storeSettings.registerFloat + cashSales - cashPayOut - cashExpOut;
+  document.getElementById('cash-theoretical').textContent = yen(theoretical);
+  const diff = actual - theoretical;
+  const diffEl = document.getElementById('cash-diff');
+  diffEl.textContent = (diff>=0?'+':'') + yen(diff);
+  diffEl.style.color = diff===0 ? 'var(--good)' : 'var(--warn)';
+}
+window.closeReport = function(){
+  reportClosed = true;
+  document.getElementById('report-status-label').textContent = '📋 今日の営業　入力済みです';
+  document.getElementById('report-status-card').style.borderLeft = '4px solid var(--good)';
+  document.getElementById('home-report-badge').innerHTML = '<span class="badge good">締め済み</span>';
+  document.getElementById('report-fields').disabled = true;
+  document.getElementById('report-closed-banner').style.display = 'block';
+  showToastMini('今日の営業を締めました。以降の修正には管理者権限が必要です。');
+}
+window.reopenReport = function(){
+  if(!confirm('締めを解除しますか？（この操作は管理者向けです。実際の画面では「誰が・いつ解除したか」が記録されます）')) return;
+  reportClosed = false;
+  document.getElementById('report-status-label').textContent = '📋 今日の営業　まだ入力されていません';
+  document.getElementById('report-status-card').style.borderLeft = '';
+  document.getElementById('home-report-badge').innerHTML = '<span class="badge warn">未締め</span>';
+  document.getElementById('report-fields').disabled = false;
+  document.getElementById('report-closed-banner').style.display = 'none';
+  showToastMini('締めを解除しました。修正後、再度締めてください。');
+}
+
+// ---- 給与 ----
+let payrollData = {}; // staffId -> {hours, basePay, backTotal, payTotal, final}
+let payslipConfirmed = {}; // staffId -> {signature, confirmedAt}
+
+function renderPayroll(){
+  const tbody = document.getElementById('payroll-table');
+  const targets = staff.filter(s=>{
+    if(s.status !== 'retired') return true;
+    // 退職済みでも、今月分の未払いがあれば最後の給与として表示し続ける
+    const hasBack = backRecords.some(r=>r.staffId===s.id);
+    const hasPay = dailyPays.some(p=>p.staffId===s.id);
+    return hasBack || hasPay || (s.clockIn && s.clockOut);
+  });
+  tbody.innerHTML = targets.map(s=>{
+    let hours = 0;
+    if(s.clockIn && s.clockOut){
+      const [ih,im]=s.clockIn.split(':').map(Number), [oh,om]=s.clockOut.split(':').map(Number);
+      let diffMin = (oh*60+om)-(ih*60+im);
+      if(diffMin < 0) diffMin += 24*60; // 深夜営業で日をまたいだ場合（例：出勤21:00→退勤翌2:00）
+      hours = diffMin/60;
+    }
+    const basePay = Math.round(hours * s.wage);
+    const backTotal = backRecords.filter(r=>r.staffId===s.id).reduce((sum,r)=> sum + backItems.find(i=>i.id===r.itemId).backAmount, 0);
+    const payTotal = dailyPays.filter(p=>p.staffId===s.id).reduce((sum,p)=>sum+p.amount,0);
+    // 日払いは「月末給与の前払い」のため、最終支給額からは差し引く（二重払い防止）
+    const final = basePay + backTotal - payTotal;
+    payrollData[s.id] = {hours, basePay, backTotal, payTotal, final, name:s.name};
+    const confirmed = payslipConfirmed[s.id];
+    return `<tr>
+      <td>${s.name}${s.status==='retired' ? '<span class="badge warn" style="margin-left:6px;">退職済</span>' : ''}</td>
+      <td class="right">${hours.toFixed(1)}h</td>
+      <td class="right">¥${yen(basePay)}</td>
+      <td class="right">¥${yen(backTotal)}</td>
+      <td class="right">－¥${yen(payTotal)}</td>
+      <td class="right" style="font-weight:700;">¥${yen(final)}</td>
+      <td class="right">
+        ${confirmed
+          ? `<span class="badge good">受領済</span> <button class="icon-btn" onclick="openPayslipModal('${s.id}')">明細</button>`
+          : `<button class="btn ghost sm" onclick="openPayslipModal('${s.id}')">明細・確定</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ---- 給与明細・受領サイン ----
+let sigCtx = null, sigDrawing = false, sigHasDrawn = false;
+window.openPayslipModal = function(staffId){
+  const d = payrollData[staffId];
+  if(!d) return;
+  document.getElementById('payslip-modal').dataset.staffId = staffId;
+  document.getElementById('payslip-staff-name').textContent = `${d.name} さんの給与明細`;
+  const now = new Date();
+  document.getElementById('payslip-period').textContent = `対象期間：${now.getFullYear()}年${now.getMonth()+1}月分（締め日：${storeSettings.closingDay}）`;
+  document.getElementById('payslip-detail-table').innerHTML = `
+    <tr><td>勤務時間</td><td class="right">${d.hours.toFixed(1)}h</td></tr>
+    <tr><td>基本給</td><td class="right">¥${yen(d.basePay)}</td></tr>
+    <tr><td>バック</td><td class="right">¥${yen(d.backTotal)}</td></tr>
+    <tr><td>日払い（前払い分）</td><td class="right">－¥${yen(d.payTotal)}</td></tr>
+    <tr><td>控除・所得税等</td><td class="right">未設定（¥0）</td></tr>`;
+  document.getElementById('payslip-final').textContent = yen(d.final);
+
+  const confirmed = payslipConfirmed[staffId];
+  const sigSection = document.getElementById('payslip-signature-section');
+  const confirmBtn = document.getElementById('payslip-confirm-btn');
+  const note = document.getElementById('payslip-confirmed-note');
+  if(confirmed){
+    sigSection.style.display = 'none';
+    confirmBtn.style.display = 'none';
+    note.style.display = 'block';
+    document.getElementById('payslip-confirmed-text').textContent = `${confirmed.confirmedAt} に受領サイン済みです`;
+  } else {
+    sigSection.style.display = 'block';
+    confirmBtn.style.display = 'inline-block';
+    note.style.display = 'none';
+    setTimeout(initSignatureCanvas, 0); // モーダル描画後にcanvasサイズを取得
+  }
+  document.getElementById('payslip-modal').style.display = 'flex';
+};
+window.closePayslipModal = function(){
+  document.getElementById('payslip-modal').style.display = 'none';
+};
+
+function initSignatureCanvas(){
+  const canvas = document.getElementById('signature-canvas');
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width; canvas.height = 120;
+  sigCtx = canvas.getContext('2d');
+  sigCtx.strokeStyle = '#0d1b2a';
+  sigCtx.lineWidth = 2.4;
+  sigCtx.lineCap = 'round';
+  sigHasDrawn = false;
+
+  const getPos = (e)=>{
+    const r = canvas.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    return {x: p.clientX - r.left, y: p.clientY - r.top};
+  };
+  const start = (e)=>{ sigDrawing = true; sigHasDrawn = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); e.preventDefault(); };
+  const move = (e)=>{ if(!sigDrawing) return; const p = getPos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); e.preventDefault(); };
+  const end = ()=>{ sigDrawing = false; };
+
+  canvas.onmousedown = start; canvas.onmousemove = move; window.addEventListener('mouseup', end);
+  canvas.ontouchstart = start; canvas.ontouchmove = move; canvas.ontouchend = end;
+}
+window.clearSignature = function(){
+  if(!sigCtx) return;
+  sigCtx.clearRect(0,0,sigCtx.canvas.width,sigCtx.canvas.height);
+  sigHasDrawn = false;
+};
+window.confirmPayslip = function(){
+  if(!sigHasDrawn){ alert('サインしてから確定してください'); return; }
+  const staffId = document.getElementById('payslip-modal').dataset.staffId;
+  const now = new Date();
+  const confirmedAt = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  payslipConfirmed[staffId] = {
+    signature: document.getElementById('signature-canvas').toDataURL(),
+    confirmedAt,
+  };
+  renderPayroll();
+  closePayslipModal();
+  showToastMini('給与明細を確定しました');
+};
+
+// ---- 月次集計 ----
+function renderMonthly(){
+  const now = new Date();
+  document.getElementById('monthly-period-label').textContent = `${now.getFullYear()}年${now.getMonth()+1}月の集計`;
+
+  const cash = parseFloat(document.getElementById('sales-cash').value)||0;
+  const card = parseFloat(document.getElementById('sales-card').value)||0;
+  const qr = parseFloat(document.getElementById('sales-qr').value)||0;
+  const other = parseFloat(document.getElementById('sales-other').value)||0;
+  const totalSales = cash+card+qr+other;
+  const groups = parseFloat(document.getElementById('visitor-groups').value)||0;
+
+  const payrollTotal = Object.values(payrollData).reduce((s,d)=> s + d.basePay + d.backTotal, 0);
+  const expenseTotal = expenses.reduce((s,e)=>s+e.amount,0);
+  const laborRate = totalSales>0 ? (payrollTotal/totalSales*100) : 0;
+  const avgSpend = groups>0 ? totalSales/groups : 0;
+
+  document.getElementById('m-total-sales').textContent = yen(totalSales);
+  document.getElementById('m-business-days').textContent = (totalSales>0 || groups>0) ? '1日' : '0日';
+  document.getElementById('m-cash-sales').textContent = yen(cash);
+  document.getElementById('m-card-sales').textContent = yen(card);
+  document.getElementById('m-qr-sales').textContent = yen(qr);
+  document.getElementById('m-visitor-groups').textContent = groups + '組';
+  document.getElementById('m-avg-spend').textContent = yen(avgSpend);
+  document.getElementById('m-payroll-total').textContent = yen(payrollTotal);
+  document.getElementById('m-labor-rate').textContent = laborRate.toFixed(1) + '%';
+  document.getElementById('m-expense-total').textContent = yen(expenseTotal);
+  const diffEl = document.getElementById('m-cash-diff');
+  diffEl.textContent = document.getElementById('cash-diff') ? document.getElementById('cash-diff').textContent : '0';
+}
+
+// ---- お支払い・契約管理 ----
+window.openBillingPortal = function(){
+  // 実装時：create-portal-session Functionsを呼び出し、返ってきたurlへ遷移する
+  alert('この画面はデザイン確認用です。実際にはStripe Customer Portal（安全な決済管理画面）が開きます。');
+};
+
+// ---- 使い方・ヘルプ ----
+const helpArticles = [
+  {category:'はじめての方へ', title:'よるラくの基本的な使い方', body:'出勤→バック・日払い→退勤→給与確認、という4つの操作が基本の流れです。'},
+  {category:'スタッフ登録', title:'新しいスタッフを登録する', body:'「スタッフ管理」を開き、名前・ログインID・時給を入力して「スタッフを追加」を押します。'},
+  {category:'出勤・退勤', title:'QRコードで出勤・退勤する', body:'お店に設置した端末のQRコードをスマホで読み取ると、出勤・退勤の画面が開きます。'},
+  {category:'バック', title:'バックを登録する', body:'「バック・日払い」でスタッフと項目を選んで登録します。給与へ自動反映されます。'},
+  {category:'バック', title:'バック項目を追加する', body:'「バック項目の管理」から、シャンパンなどお店独自の項目を自由に追加できます。'},
+  {category:'日払い', title:'日払いを登録する', body:'スタッフ・金額・支払方法（レジ現金／別現金／銀行振込）を選んで登録します。'},
+  {category:'給与', title:'給与を確定する・受領サインをもらう', body:'「給与」で対象スタッフの「明細・確定」を押し、内容を確認のうえ画面にサインしてもらいます。'},
+  {category:'今日の営業', title:'金種の数え方', body:'「今日の営業」の「金種を数える」で、お札・硬貨の枚数を入力すると自動で金額を計算します。'},
+  {category:'今日の営業', title:'レジ締めのしかた', body:'金種で数えた実際の金額と、売上等から計算した理論上の金額を比べ、差額を確認します。'},
+  {category:'設定', title:'使う機能だけを選ぶ', body:'「設定」の「今日の営業で使う項目」から、お店に必要な機能だけをON/OFFできます。'},
+  {category:'お支払い', title:'プランを変更・解約したい', body:'「設定」の「お支払い・契約管理」から、安全な決済画面でいつでも変更・解約できます。'},
+];
+const helpFaq = [
+  {q:'出勤時間を間違えました', a:'「勤怠」の「管理者が手動で修正」から、時刻と理由を入力して修正できます。'},
+  {q:'スタッフの時給を変更したい', a:'「スタッフ管理」で該当スタッフの時給欄を直接書き換えると、その場で反映されます。'},
+  {q:'日払いを取り消したい', a:'現在のデモでは取り消し機能は未実装です。実際の画面では管理者権限で取消・履歴記録ができるようにする予定です。'},
+  {q:'金種が合いません', a:'「今日の営業」のレジ締めで、理論現金残高と実際の金額の差額を確認できます。経費・仕入・日払いの支払方法（レジ現金かどうか）を見直してみてください。'},
+  {q:'退職したスタッフをどうすればいいですか', a:'「スタッフ管理」から「退職として処理」を押してください。記録は残り、必要なら「再雇用する」で戻せます。'},
+  {q:'プランを変更したい', a:'「設定」の「お支払い・契約管理」からいつでも変更できます。'},
+];
+
+function renderHelpCategories(){
+  const cats = ['すべて', ...new Set(helpArticles.map(a=>a.category))];
+  document.getElementById('help-category-buttons').innerHTML = cats.map(c=>
+    `<button class="btn ghost sm" onclick="filterHelpCategory('${c}')" data-cat="${c}">${c}</button>`
+  ).join('');
+}
+let helpActiveCategory = 'すべて';
+window.filterHelpCategory = function(cat){
+  helpActiveCategory = cat;
+  document.getElementById('help-search-input').value = '';
+  renderHelpArticles();
+};
+function renderHelpArticles(){
+  const search = document.getElementById('help-search-input').value.trim().toLowerCase();
+  let list = helpArticles;
+  if(search){
+    list = helpArticles.filter(a => a.title.toLowerCase().includes(search) || a.body.toLowerCase().includes(search) || a.category.toLowerCase().includes(search));
+    document.getElementById('help-articles-title').textContent = `検索結果（${list.length}件）`;
+  } else {
+    list = helpActiveCategory==='すべて' ? helpArticles : helpArticles.filter(a=>a.category===helpActiveCategory);
+    document.getElementById('help-articles-title').textContent = helpActiveCategory;
+  }
+  document.getElementById('help-articles-list').innerHTML = list.length===0
+    ? '<p style="font-size:13px;color:var(--ink-soft);">該当する説明が見つかりませんでした</p>'
+    : list.map(a=>`
+      <details style="border-bottom:1px solid var(--line);padding:10px 2px;">
+        <summary style="cursor:pointer;font-weight:700;font-size:14px;">${a.title}<span class="store-tag" style="margin-left:6px;">${a.category}</span></summary>
+        <p style="font-size:13px;color:var(--ink-soft);margin:8px 0 0;">${a.body}</p>
+      </details>`).join('');
+}
+function renderHelpFaq(){
+  document.getElementById('help-faq-list').innerHTML = helpFaq.map(f=>`
+    <details style="border-bottom:1px solid var(--line);padding:10px 2px;">
+      <summary style="cursor:pointer;font-weight:700;font-size:14px;">${f.q}</summary>
+      <p style="font-size:13px;color:var(--ink-soft);margin:8px 0 0;">${f.a}</p>
+    </details>`).join('');
+}
+
+// ---- 初期化 ----
+renderBackItemManageList();
+populateSelects();
+renderStaffManageList();
+issueNewQrToken();
+setAttendanceMode('kiosk');
+renderStaffList();
+renderBackRecords();
+renderDailyPays();
+renderExpenses();
+renderDenominations();
+renderPayroll();
+updateReportTotals();
+renderDailySettingsList();
+applyDailySettings();
+renderStoreSettingsForm();
+updateCashClosing();
+</script>
+</body>
+</html>

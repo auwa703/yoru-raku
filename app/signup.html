@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新規登録｜よるラク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
+    --dusk:#0d1b2a; --dusk-deep:#08111c; --brass:#ff7a59; --brass-soft:#ffe8df;
+    --good:#4b7a63; --good-soft:#e7f0ea;
+    --radius:16px; --shadow:0 1px 3px rgba(35,34,40,.06),0 10px 28px rgba(35,34,40,.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;background:var(--dusk-deep);color:var(--ink);font-family:'Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;padding:20px;}
+  .status-bar{position:fixed;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--dusk),var(--brass),var(--dusk-deep));}
+
+  .auth-wrap{width:100%;max-width:420px;}
+  .brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px;}
+  .brand-mark{
+    width:44px;height:44px;border-radius:50%;
+    background:conic-gradient(from -50deg, var(--brass) 0deg 110deg, var(--dusk) 110deg 360deg);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
+  }
+  .brand-name{font-size:18px;font-weight:900;color:#fff;}
+
+  .plan-badge{
+    display:none;align-items:center;justify-content:space-between;
+    background:var(--brass-soft);border:1px solid var(--brass);border-radius:12px;
+    padding:10px 14px;margin-bottom:16px;font-size:13px;color:#8a611f;
+  }
+  .plan-badge b{font-size:14px;}
+  .plan-badge a{color:#8a611f;font-size:12px;}
+
+  .card{background:var(--panel);border-radius:20px;box-shadow:var(--shadow);padding:28px 26px;}
+  h1{font-size:17px;font-weight:900;margin:0 0 6px;color:var(--dusk-deep);}
+  .sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 20px;}
+  label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:5px;}
+  input{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;font-size:15px;font-family:inherit;margin-bottom:14px;}
+  input:focus{outline:2px solid var(--brass);outline-offset:0;border-color:var(--brass);}
+  .hint{font-size:11px;color:var(--ink-soft);margin:-10px 0 14px;}
+
+  .agree-row{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;}
+  .agree-row input{width:auto;margin:2px 0 0;}
+  .agree-row a{color:var(--dusk);text-decoration:underline;}
+
+  .btn{width:100%;font-family:inherit;font-weight:700;border:none;border-radius:10px;cursor:pointer;font-size:15px;padding:13px;
+    background:linear-gradient(135deg,var(--dusk),var(--brass));color:#fff;}
+  .btn:hover{filter:brightness(1.05);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .foot-link{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:20px;}
+  .foot-link a{color:#fff;font-weight:700;text-decoration:none;}
+
+  .trial-note{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--good);background:var(--good-soft);border-radius:8px;padding:9px 12px;margin-bottom:18px;}
+</style>
+</head>
+<body>
+<div class="status-bar"></div>
+
+<div class="auth-wrap">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div class="brand-name">よるラク</div>
+  </div>
+
+  <div class="plan-badge" id="plan-badge">
+    <span>選択中のプラン：<b id="plan-name">-</b></span>
+    <a href="/pricing.html">変更する</a>
+  </div>
+
+  <div class="card">
+    <h1>お店のアカウントを作成</h1>
+    <p class="sub">クレジットカードの登録は不要です。まずは14日間、無料でお試しいただけます。</p>
+
+    <div class="trial-note">✓ 14日間はSTANDARD相当の機能を無料でご利用いただけます</div>
+
+    <form id="signup-form">
+      <label>店舗名</label>
+      <input type="text" id="su-store-name" placeholder="例：DEMO LOUNGE" required>
+
+      <label>代表者名</label>
+      <input type="text" id="su-owner-name" placeholder="例：山田 太郎" required>
+
+      <label>メールアドレス</label>
+      <input type="email" id="su-email" placeholder="you@example.com" required>
+
+      <label>パスワード</label>
+      <input type="password" id="su-password" placeholder="8文字以上" minlength="8" required>
+      <div class="hint">半角英数字8文字以上で設定してください</div>
+
+      <label>電話番号（任意）</label>
+      <input type="tel" id="su-phone" placeholder="090-0000-0000">
+
+      <div class="agree-row">
+        <input type="checkbox" id="su-agree" required>
+        <label style="margin:0;" for="su-agree"><a href="/terms.html" target="_blank">利用規約</a>と<a href="/privacy.html" target="_blank">プライバシーポリシー</a>に同意します</label>
+      </div>
+
+      <button type="submit" class="btn">無料で登録する</button>
+    </form>
+  </div>
+
+  <p class="foot-link">すでにアカウントをお持ちの方は <a href="login.html">ログイン</a></p>
+</div>
+
+<script>
+// URLの ?plan=light / standard / pro を読み取り、選択中プランを表示する
+const params = new URLSearchParams(location.search);
+const planNames = {light:'LIGHT', standard:'STANDARD', pro:'PRO'};
+const plan = params.get('plan');
+if(plan && planNames[plan]){
+  document.getElementById('plan-badge').style.display = 'flex';
+  document.getElementById('plan-name').textContent = planNames[plan];
+}
+
+document.getElementById('signup-form').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  // 実装時：
+  // 1. Supabase Authでユーザー作成
+  // 2. stores テーブルへ店舗を作成し store_id を発行
+  // 3. store_members へ owner として紐付け
+  // 4. subscriptions を status:'trialing', trial_ends_at: 14日後 で作成
+  // 5. onboarding.html へ遷移
+  window.location.href = 'onboarding.html';
+});
+</script>
+</body>
+</html>

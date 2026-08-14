@@ -1,0 +1,14 @@
+{
+  "name": "store-management-saas-functions",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Netlify Functions for the store management SaaS (Stripe billing / QR attendance).",
+  "dependencies": {
+    "@netlify/functions": "^2.8.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "stripe": "^16.8.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
