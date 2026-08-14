@@ -6,7 +6,7 @@
   # /app 以下は認証必須のSPA的な構成を想定し、後続の実装でルーティングを調整する。
   publish = "marketing"
   functions = "netlify/functions"
-  command = "echo 'no build step yet - static files only'"
+  command = "cp -r admin app demo marketing/"
 
 [functions]
   node_bundler = "esbuild"
@@ -37,8 +37,7 @@
   status = 200
 
 # 認証・アプリ側の入口（/app フォルダ配下）。
-# 現状 publish = "marketing" のため、実装時はビルドステップで app/ の中身を
-# publish ディレクトリへコピーするか、publish をリポジトリルートに変更して調整する。
+# ビルドコマンドで app/ の中身を publish ディレクトリ（marketing/）へコピーして配信する。
 [[redirects]]
   from = "/login"
   to = "/app/login.html"
