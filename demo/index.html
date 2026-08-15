@@ -179,6 +179,10 @@
           <div><label>時給（円）</label><input type="number" id="new-staff-wage" placeholder="例：1400"></div>
           <div><label>入店日</label><input type="date" id="new-staff-joined"></div>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;margin:0 0 12px;font-size:13px;font-weight:500;">
+          <input type="checkbox" id="new-staff-dailypay" checked>
+          日払い対象にする
+        </label>
         <button class="btn" onclick="addStaff()">スタッフを追加</button>
       </div>
 
@@ -591,9 +595,9 @@
 <script>
 // ---- デモ用ダミーデータ（保存されません。セッション内のみ） ----
 const staff = [
-  {id:'a', name:'スタッフA', loginId:'a-staff', wage:1500, joinedAt:'2025-04-01', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'},
-  {id:'b', name:'スタッフB', loginId:'b-staff', wage:1400, joinedAt:'2025-06-15', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'},
-  {id:'c', name:'スタッフC', loginId:'c-staff', wage:1300, joinedAt:'2026-02-01', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'},
+  {id:'a', name:'スタッフA', loginId:'a-staff', wage:1500, joinedAt:'2025-04-01', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active', dailyPayEligible:true},
+  {id:'b', name:'スタッフB', loginId:'b-staff', wage:1400, joinedAt:'2025-06-15', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active', dailyPayEligible:true},
+  {id:'c', name:'スタッフC', loginId:'c-staff', wage:1300, joinedAt:'2026-02-01', retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active', dailyPayEligible:false},
 ];
 let backItems = [
   {id:'drink', name:'ドリンク', category:'基本', salePrice:1000, backAmount:300, active:true, sortOrder:1},
@@ -767,6 +771,10 @@ function renderStaffManageList(){
           <input type="number" value="${s.wage}" min="0" step="10"
                  onchange="updateStaffWage('${s.id}', this.value)">
         </div>
+        <label style="display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:13px;font-weight:500;">
+          <input type="checkbox" ${s.dailyPayEligible ? 'checked' : ''} onchange="toggleStaffDailyPay('${s.id}', this.checked)">
+          日払い対象にする
+        </label>
       </div>
       <button class="btn ghost sm" onclick="retireStaff('${s.id}')">退職として処理</button>
     </div>`).join('');
@@ -786,18 +794,25 @@ window.updateStaffWage = function(id, val){
   staff.find(s=>s.id===id).wage = wage;
   renderPayroll();
 };
+window.toggleStaffDailyPay = function(id, checked){
+  staff.find(s=>s.id===id).dailyPayEligible = checked;
+  populateSelects();
+  showToastMini(checked ? '日払い対象にしました' : '日払い対象から外しました');
+};
 window.addStaff = function(){
   const name = document.getElementById('new-staff-name').value.trim();
   const loginId = document.getElementById('new-staff-login').value.trim();
   const wage = parseFloat(document.getElementById('new-staff-wage').value);
   const joinedAt = document.getElementById('new-staff-joined').value || new Date().toISOString().slice(0,10);
+  const dailyPayEligible = document.getElementById('new-staff-dailypay').checked;
   if(!name || isNaN(wage) || wage<=0){ alert('名前と時給を正しく入力してください'); return; }
   const id = 's' + Date.now().toString(36);
-  staff.push({id, name, loginId, wage, joinedAt, retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active'});
+  staff.push({id, name, loginId, wage, joinedAt, retiredAt:null, note:'', clockIn:null, clockOut:null, clockInMethod:null, clockOutMethod:null, edited:false, status:'active', dailyPayEligible});
   document.getElementById('new-staff-name').value='';
   document.getElementById('new-staff-login').value='';
   document.getElementById('new-staff-wage').value='';
   document.getElementById('new-staff-joined').value='';
+  document.getElementById('new-staff-dailypay').checked = true;
   renderStaffManageList();
   renderStaffList();
   populateSelects();
@@ -995,8 +1010,9 @@ window.addBackItem = function(){
 
 function populateSelects(){
   const staffOpts = staff.filter(s=>s.status!=='retired').map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  const dailyPayStaffOpts = staff.filter(s=>s.status!=='retired' && s.dailyPayEligible).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   document.getElementById('back-staff').innerHTML = staffOpts;
-  document.getElementById('pay-staff').innerHTML = staffOpts;
+  document.getElementById('pay-staff').innerHTML = dailyPayStaffOpts || '<option value="" disabled>日払い対象のスタッフがいません</option>';
   const activeBackItems = backItems.filter(i=>i.active).sort((a,b)=>a.sortOrder-b.sortOrder);
   document.getElementById('back-item').innerHTML = activeBackItems.map(i=>`<option value="${i.id}">${i.name}（¥${yen(i.backAmount)}）</option>`).join('');
 }

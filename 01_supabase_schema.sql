@@ -99,6 +99,7 @@ create table staff (
   joined_at date,
   retired_at date,
   note text,
+  daily_pay_eligible boolean not null default true, -- スタッフごとに日払いの対象可否を設定
   created_at timestamptz not null default now()
 );
 
