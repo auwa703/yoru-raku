@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マイページ｜よるラク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="/app/_shared/staff-auth-guard.js"></script>
+<style>
+  :root{
+    --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
+    --dusk:#0d1b2a; --dusk-deep:#08111c; --brass:#ff7a59; --brass-soft:#ffe8df;
+    --good:#4b7a63; --good-soft:#e7f0ea;
+    --radius:14px; --shadow:0 1px 3px rgba(35,34,40,.06),0 8px 24px rgba(35,34,40,.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;}
+  .status-bar{height:5px;width:100%;background:linear-gradient(90deg,var(--dusk),var(--brass),var(--dusk-deep));}
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 60px;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .brand{display:flex;align-items:center;gap:8px;}
+  .brand-mark{width:26px;height:26px;border-radius:50%;background:conic-gradient(from -50deg, var(--brass) 0deg 110deg, var(--dusk) 110deg 360deg);-webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));mask:radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));}
+  .brand-name{font-weight:900;font-size:14px;color:var(--dusk-deep);}
+  .logout-btn{background:none;border:none;color:var(--ink-soft);font-size:12px;cursor:pointer;text-decoration:underline;}
+  h1{font-size:18px;font-weight:900;margin:0 0 14px;color:var(--dusk-deep);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;}
+  .card h3{margin:0 0 10px;font-size:14px;}
+  .label{font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
+  .value{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;font-family:'Montserrat',sans-serif;}
+  .value.money::before{content:'¥';font-size:13px;color:var(--brass);margin-right:2px;font-weight:700;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-weight:500;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:6px 4px;font-size:11px;}
+  td{padding:8px 4px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .right{text-align:right;}
+</style>
+</head>
+<body>
+<div class="status-bar"></div>
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="brand-mark"></div><div class="brand-name">よるラク</div></div>
+    <button class="logout-btn" onclick="clearStaffSession(); location.href='/login';">ログアウト</button>
+  </header>
+  <h1 id="greeting">マイページ</h1>
+
+  <div class="card">
+    <h3>今月の給与見込み</h3>
+    <div class="label">勤務時間</div>
+    <div class="value" id="ps-hours" style="margin-bottom:10px;">-</div>
+    <div class="label">基本給</div>
+    <div class="value money" id="ps-base" style="margin-bottom:10px;">0</div>
+    <div class="label">バック</div>
+    <div class="value money" id="ps-back" style="margin-bottom:10px;">0</div>
+    <div class="label">日払い（前払い分）</div>
+    <div class="value money" id="ps-pay" style="margin-bottom:10px;">0</div>
+    <div style="border-top:1px dashed var(--line);margin-top:10px;padding-top:10px;">
+      <div class="label">支給見込</div>
+      <div class="value money" id="ps-final" style="font-size:26px;">0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>今月の勤怠履歴</h3>
+    <table>
+      <thead><tr><th>日付</th><th>出勤</th><th>退勤</th></tr></thead>
+      <tbody id="attendance-table"><tr><td colspan="3">読み込み中...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function yen(n){ return Math.round(n || 0).toLocaleString('ja-JP'); }
+function fmtTime(iso){
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+async function boot(){
+  const meRes = await staffFetch('/.netlify/functions/staff-me');
+  if (!meRes) return;
+  const me = await meRes.json();
+  document.getElementById('greeting').textContent = me.name + ' さん';
+  document.getElementById('attendance-table').innerHTML = me.attendance.map(a => `
+    <tr><td>${a.business_date}</td><td>${fmtTime(a.clock_in)}</td><td>${fmtTime(a.clock_out)}</td></tr>
+  `).join('') || '<tr><td colspan="3">今月の記録はまだありません</td></tr>';
+
+  const psRes = await staffFetch('/.netlify/functions/staff-payslip');
+  if (!psRes) return;
+  const ps = await psRes.json();
+  document.getElementById('ps-hours').textContent = ps.hours.toFixed(1) + 'h';
+  document.getElementById('ps-base').textContent = yen(ps.basePay);
+  document.getElementById('ps-back').textContent = yen(ps.backTotal);
+  document.getElementById('ps-pay').textContent = '－' + yen(ps.payTotal);
+  document.getElementById('ps-final').textContent = yen(ps.final);
+}
+boot();
+</script>
+</body>
+</html>

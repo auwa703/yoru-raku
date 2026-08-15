@@ -658,8 +658,14 @@ async function renderStaffManageList(){
           <input type="checkbox" ${s.daily_pay_eligible ? 'checked' : ''} onchange="toggleStaffDailyPay('${s.id}', this.checked)">
           日払い対象にする
         </label>
+        <div style="margin-top:6px;font-size:11.5px;color:var(--ink-soft);">
+          ${s.login_id ? (s.pin_hash ? 'PINログイン設定済み' : 'PIN未設定（ログインID登録済み）') : 'ログインIDが未設定のためPINログイン不可'}
+        </div>
       </div>
-      <button class="btn ghost sm" onclick="retireStaff('${s.id}')">退職として処理</button>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+        ${s.login_id ? `<button class="btn ghost sm" onclick="setStaffPin('${s.id}')">PINを設定</button>` : ''}
+        <button class="btn ghost sm" onclick="retireStaff('${s.id}')">退職として処理</button>
+      </div>
     </div>`).join('') || '<p style="font-size:13px;color:var(--ink-soft);">まだスタッフが登録されていません</p>';
 
   const retired = staffCache.filter(s => s.status === 'retired');
@@ -686,6 +692,21 @@ window.retireStaff = async function(id){
 };
 window.reactivateStaff = async function(id){
   await sb.from('staff').update({ status: 'active', retired_at: null }).eq('id', id);
+  renderStaffManageList();
+};
+window.setStaffPin = async function(id){
+  const pin = prompt('新しいPIN（4〜6桁の数字）を入力してください');
+  if (pin === null) return;
+  if (!/^\d{4,6}$/.test(pin)) { alert('PINは4〜6桁の数字で入力してください'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch('/.netlify/functions/staff-set-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+    body: JSON.stringify({ staff_id: id, pin }),
+  });
+  const body = await res.json();
+  if (!res.ok) { alert(body.error || 'PINの設定に失敗しました'); return; }
+  alert('PINを設定しました');
   renderStaffManageList();
 };
 window.addStaff = async function(){
