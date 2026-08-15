@@ -104,6 +104,14 @@
     .bottomnav button.active{color:var(--dusk);font-weight:700;}
     input,select,button{font-size:16px;}
   }
+
+  @media print{
+    .sidenav,.bottomnav,.demo-banner,.view:not(.print-target){display:none !important;}
+    .view.print-target{display:block !important;}
+    .main{padding:0;max-width:100%;}
+    body{background:#fff;}
+    button{display:none !important;}
+  }
 </style>
 </head>
 <body>
@@ -407,6 +415,10 @@
     <section class="view" id="view-payroll">
       <h1 class="page-title">給与</h1>
       <p class="page-sub">勤務時間・バック・日払いから、今月の給与見込みを自動計算します</p>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn ghost sm" onclick="exportPayrollCsv()">📄 CSV出力</button>
+        <button class="btn ghost sm" onclick="exportPayrollPdf()">🖨️ PDF出力</button>
+      </div>
       <div class="card">
         <table>
           <thead><tr><th>スタッフ</th><th class="right">勤務時間</th><th class="right">基本給</th><th class="right">バック</th><th class="right">日払い</th><th class="right">支給見込</th><th></th></tr></thead>
@@ -454,6 +466,10 @@
       <h1 class="page-title">月次集計</h1>
       <p class="page-sub" id="monthly-period-label">今月の集計</p>
       <p style="font-size:12px;color:var(--ink-soft);margin-top:-14px;">※デモ環境のため、本日入力した分のみが反映されます。実際の画面では月初からの累計が自動集計されます。</p>
+      <div style="display:flex;gap:8px;margin:12px 0;">
+        <button class="btn ghost sm" onclick="exportMonthlyCsv()">📄 CSV出力</button>
+        <button class="btn ghost sm" onclick="exportMonthlyPdf()">🖨️ PDF出力</button>
+      </div>
 
       <div class="grid2">
         <div class="card"><div class="label">総売上</div><div class="value money" id="m-total-sales">0</div></div>
@@ -717,6 +733,57 @@ function showToastMini(msg){
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(()=>{ el.style.display='none'; }, 2200);
 }
+
+// ---- CSV / PDF 出力 ----
+function downloadCsv(filename, rows){
+  const csv = rows.map(row => row.map(cell => {
+    const s = String(cell ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function printView(viewId){
+  document.getElementById(viewId).classList.add('print-target');
+  window.print();
+  document.getElementById(viewId).classList.remove('print-target');
+}
+window.exportPayrollCsv = function(){
+  const now = new Date();
+  const rows = [['スタッフ','勤務時間(h)','基本給','バック','日払い(前払い分)','支給見込']];
+  Object.entries(payrollData).forEach(([id, d]) => {
+    rows.push([d.name, d.hours.toFixed(1), d.basePay, d.backTotal, -d.payTotal, d.final]);
+  });
+  downloadCsv(`給与_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}.csv`, rows);
+  showToastMini('CSVをダウンロードしました');
+};
+window.exportPayrollPdf = function(){ printView('view-payroll'); };
+window.exportMonthlyCsv = function(){
+  const now = new Date();
+  const val = id => document.getElementById(id).textContent;
+  const rows = [
+    ['項目','値'],
+    ['対象月', `${now.getFullYear()}年${now.getMonth()+1}月`],
+    ['総売上', val('m-total-sales')],
+    ['営業日数', val('m-business-days')],
+    ['現金売上', val('m-cash-sales')],
+    ['カード', val('m-card-sales')],
+    ['電子決済', val('m-qr-sales')],
+    ['来店組数', val('m-visitor-groups')],
+    ['客単価', val('m-avg-spend')],
+    ['給与合計（バック含む）', val('m-payroll-total')],
+    ['人件費率', val('m-labor-rate')],
+    ['経費・仕入合計', val('m-expense-total')],
+    ['現金差額（本日分）', val('m-cash-diff')],
+  ];
+  downloadCsv(`月次集計_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}.csv`, rows);
+  showToastMini('CSVをダウンロードしました');
+};
+window.exportMonthlyPdf = function(){ printView('view-monthly'); };
 
 function applyDailySettings(){
   const show = (id, on) => { const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
