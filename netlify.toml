@@ -11,6 +11,14 @@
 [functions]
   node_bundler = "esbuild"
 
+# /admin 以下を簡易Basic認証で保護する応急処置（本格的なログイン実装までの暫定措置）。
+[[edge_functions]]
+  path = "/admin"
+  function = "admin-auth"
+[[edge_functions]]
+  path = "/admin/*"
+  function = "admin-auth"
+
 # デモ環境は本番と同じサイトの /demo パスで配信するが、
 # 参照するデータは本番DBと完全に分離されたダミーデータのみとする（Functionsを一切呼ばない構成を推奨）。
 [[redirects]]
