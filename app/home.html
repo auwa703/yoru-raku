@@ -563,13 +563,13 @@ function currentMonthRange(){
 window.goTo = async function(view){
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  if (view === 'staff') renderStaffManageList();
-  if (view === 'attendance') { renderAttendanceList(); refreshQrCode(); }
-  if (view === 'backs') { await Promise.all([renderBackItemManageList(), loadStaff()]); renderBackRecords(); renderDailyPays(); populateSelects(); }
-  if (view === 'report') loadReport();
-  if (view === 'payroll') renderPayroll();
-  if (view === 'monthly') renderMonthly();
-  if (view === 'settings') renderSettings();
+  if (view === 'staff') await renderStaffManageList();
+  if (view === 'attendance') { await renderAttendanceList(); refreshQrCode(); }
+  if (view === 'backs') { await Promise.all([renderBackItemManageList(), loadStaff()]); await renderBackRecords(); await renderDailyPays(); populateSelects(); }
+  if (view === 'report') await loadReport();
+  if (view === 'payroll') await renderPayroll();
+  if (view === 'monthly') await renderMonthly();
+  if (view === 'settings') await renderSettings();
 };
 document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
   btn.addEventListener('click', () => goTo(btn.dataset.view));
