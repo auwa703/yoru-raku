@@ -334,10 +334,10 @@
       <div class="card" id="card-sales">
         <h3>売上（決済方法別）</h3>
         <div class="form-grid">
-          <div><label>現金</label><input type="number" id="sales-cash" placeholder="0" oninput="updateReportTotals()"></div>
-          <div><label>クレジットカード</label><input type="number" id="sales-card" placeholder="0" oninput="updateReportTotals()"></div>
-          <div><label>QR・電子決済</label><input type="number" id="sales-qr" placeholder="0" oninput="updateReportTotals()"></div>
-          <div><label>その他</label><input type="number" id="sales-other" placeholder="0" oninput="updateReportTotals()"></div>
+          <div><label>現金</label><input type="number" id="sales-cash" placeholder="0" onchange="updateReportTotals()"></div>
+          <div><label>クレジットカード</label><input type="number" id="sales-card" placeholder="0" onchange="updateReportTotals()"></div>
+          <div><label>QR・電子決済</label><input type="number" id="sales-qr" placeholder="0" onchange="updateReportTotals()"></div>
+          <div><label>その他</label><input type="number" id="sales-other" placeholder="0" onchange="updateReportTotals()"></div>
         </div>
         <div class="label">総売上</div>
         <div class="value money" id="sales-total">0</div>
@@ -919,9 +919,9 @@ async function loadReport(){
   const { data: denoms } = await sb.from('cash_denomination_counts').select('*').eq('business_date', bd);
   denomCounts = {};
   (denoms || []).forEach(d => { denomCounts[d.denomination] = d.count; });
-  renderDenominations();
+  await renderDenominations();
 
-  updateReportTotals();
+  await updateReportTotals();
 }
 function applyDailySettingsVisibility(){
   const d = dailySettingsCache;
@@ -956,7 +956,7 @@ window.updateReportTotals = async function(){
     visitor_count: parseFloat(document.getElementById('visitor-count').value) || null,
   }, { onConflict: 'store_id,business_date' });
 
-  updateCashClosingCalc(cash);
+  await updateCashClosingCalc(cash);
 };
 window.saveReportNote = async function(){
   const bd = currentBusinessDate();
@@ -977,26 +977,26 @@ window.addExpense = async function(){
   document.getElementById('exp-amount').value = '';
   loadReport();
 };
-function renderDenominations(){
+async function renderDenominations(){
   document.getElementById('denom-wrap').innerHTML = DENOMINATIONS.map(d => `
     <div class="denom-row">
       <div class="d">¥${d.toLocaleString('ja-JP')}</div>
       <input type="number" min="0" value="${denomCounts[d] || ''}" placeholder="枚数" onchange="onDenomInput(${d}, this.value)">
       <div class="sub">¥${yen((denomCounts[d] || 0) * d)}</div>
     </div>`).join('');
-  updateCashActual();
+  await updateCashActual();
 }
 window.onDenomInput = async function(denom, val){
   const count = parseInt(val, 10) || 0;
   denomCounts[denom] = count;
   await sb.from('cash_denomination_counts').upsert({ store_id: currentStoreId, business_date: currentBusinessDate(), denomination: denom, count }, { onConflict: 'store_id,business_date,denomination' });
-  renderDenominations();
+  await renderDenominations();
 };
-function updateCashActual(){
+async function updateCashActual(){
   const total = DENOMINATIONS.reduce((s, d) => s + (denomCounts[d] || 0) * d, 0);
   document.getElementById('cash-actual').textContent = yen(total);
   const cash = parseFloat(document.getElementById('sales-cash').value) || 0;
-  updateCashClosingCalc(cash);
+  await updateCashClosingCalc(cash);
 }
 async function updateCashClosingCalc(cashSales){
   const bd = currentBusinessDate();
