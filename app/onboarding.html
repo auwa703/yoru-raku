@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="_shared/supabase-client.js"></script>
-<script src="_shared/auth-guard.js"></script>
+<script src="/app/_shared/supabase-client.js"></script>
+<script src="/app/_shared/auth-guard.js"></script>
 <style>
   :root{
     --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
@@ -226,7 +226,7 @@ window.wizardNext = async function(){
     nextBtn.textContent = '保存しています...';
     try {
       await finishOnboarding();
-      window.location.href = 'home.html';
+      window.location.href = '/app/home.html';
     } catch (err) {
       alert('設定の保存に失敗しました。もう一度お試しください。');
       nextBtn.disabled = false;
@@ -245,7 +245,7 @@ window.skipWizard = async function(){
       // 保存に失敗しても、あとで「設定」から再設定できるためスキップ自体は継続する
       console.error('オンボーディングのスキップ時保存に失敗しました', err);
     }
-    window.location.href = 'home.html';
+    window.location.href = '/app/home.html';
   }
 };
 
