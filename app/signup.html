@@ -6,6 +6,8 @@
 <title>新規登録｜よるラク</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="_shared/supabase-client.js"></script>
 <style>
   :root{
     --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
@@ -57,6 +59,9 @@
   .foot-link a{color:#fff;font-weight:700;text-decoration:none;}
 
   .trial-note{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--good);background:var(--good-soft);border-radius:8px;padding:9px 12px;margin-bottom:18px;}
+  .warn{--warn:#b24444; --warn-soft:#fbe9e7;}
+  .error-box{display:none;background:#fbe9e7;border:1px solid #b24444;color:#7a2f2f;font-size:12.5px;padding:10px 12px;border-radius:8px;margin-bottom:14px;}
+  .info-box{display:none;background:var(--good-soft);color:var(--good);font-size:12.5px;padding:12px 14px;border-radius:8px;margin-bottom:14px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -78,6 +83,8 @@
     <p class="sub">クレジットカードの登録は不要です。まずは14日間、無料でお試しいただけます。</p>
 
     <div class="trial-note">✓ 14日間はSTANDARD相当の機能を無料でご利用いただけます</div>
+    <div class="error-box" id="error-box"></div>
+    <div class="info-box" id="info-box"></div>
 
     <form id="signup-form">
       <label>店舗名</label>
@@ -118,15 +125,66 @@ if(plan && planNames[plan]){
   document.getElementById('plan-name').textContent = planNames[plan];
 }
 
-document.getElementById('signup-form').addEventListener('submit', (e)=>{
+document.getElementById('signup-form').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  // 実装時：
-  // 1. Supabase Authでユーザー作成
-  // 2. stores テーブルへ店舗を作成し store_id を発行
-  // 3. store_members へ owner として紐付け
-  // 4. subscriptions を status:'trialing', trial_ends_at: 14日後 で作成
-  // 5. onboarding.html へ遷移
-  window.location.href = 'onboarding.html';
+  const errorBox = document.getElementById('error-box');
+  const infoBox = document.getElementById('info-box');
+  errorBox.style.display = 'none';
+  infoBox.style.display = 'none';
+
+  const storeName = document.getElementById('su-store-name').value.trim();
+  const ownerName = document.getElementById('su-owner-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const password = document.getElementById('su-password').value;
+  const phone = document.getElementById('su-phone').value.trim();
+
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '登録中...';
+
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { store_name: storeName, owner_name: ownerName, phone: phone || null, plan_id: plan || null },
+      },
+    });
+
+    if (error) {
+      errorBox.textContent = error.message.includes('already registered')
+        ? 'このメールアドレスは既に登録されています。ログイン画面からお進みください。'
+        : '登録に失敗しました：' + error.message;
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    if (!data.session) {
+      // メール確認が必要な設定の場合。確認後、初回ログイン時にstores等が作成される。
+      infoBox.textContent = '確認メールをお送りしました。メール内のリンクをクリックしたあと、ログイン画面からお進みください。';
+      infoBox.style.display = 'block';
+      document.getElementById('signup-form').style.display = 'none';
+      return;
+    }
+
+    const res = await fetch('/.netlify/functions/signup-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: data.session.access_token }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || '店舗情報の作成に失敗しました');
+    }
+
+    window.location.href = 'onboarding.html';
+  } catch (err) {
+    errorBox.textContent = err.message || '登録処理中にエラーが発生しました。もう一度お試しください。';
+    errorBox.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '無料で登録する';
+  }
 });
 </script>
 </body>

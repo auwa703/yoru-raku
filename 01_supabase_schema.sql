@@ -13,6 +13,7 @@ create table stores (
   name text not null,
   owner_name text,
   phone text,
+  staff_login_slug text unique, -- スタッフPINログイン用の店舗識別スラッグ（例：/login?store=<slug>）
   created_at timestamptz not null default now()
 );
 
@@ -120,6 +121,7 @@ create table staff (
   retired_at date,
   note text,
   daily_pay_eligible boolean not null default true, -- スタッフごとに日払いの対象可否を設定
+  pin_hash text, -- スタッフPINログイン用（平文は保存しない。bcryptハッシュのみ）
   created_at timestamptz not null default now()
 );
 
@@ -388,6 +390,15 @@ alter table faq_items enable row level security;
 create policy "anyone authenticated can read published faq"
   on faq_items for select
   using (is_published = true);
+
+-- SUPER_ADMIN（運営者）を記録するテーブル。店舗をまたいだ操作を行うため、
+-- 通常のis_member_of_storeでは判定できない。読み書きはNetlify Functions（service role）経由のみ、
+-- クライアント向けポリシーは一切作成しない＝デフォルト全拒否とする。
+create table super_admins (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table super_admins enable row level security;
 
 -- ============================================================
 -- 初期マスタデータ
