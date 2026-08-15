@@ -557,12 +557,12 @@ function currentMonthRange(){
 }
 
 // ---- ナビゲーション ----
-window.goTo = function(view){
+window.goTo = async function(view){
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   if (view === 'staff') renderStaffManageList();
   if (view === 'attendance') { renderAttendanceList(); refreshQrCode(); }
-  if (view === 'backs') { renderBackItemManageList(); renderBackRecords(); renderDailyPays(); populateSelects(); }
+  if (view === 'backs') { await Promise.all([renderBackItemManageList(), loadStaff()]); renderBackRecords(); renderDailyPays(); populateSelects(); }
   if (view === 'report') loadReport();
   if (view === 'payroll') renderPayroll();
   if (view === 'monthly') renderMonthly();
@@ -825,11 +825,12 @@ window.updateBackItem = async function(id, field, val){
   const num = val === '' ? null : parseFloat(val);
   if (field === 'back_amount' && (num === null || isNaN(num) || num < 0)) { alert('正しいバック金額を入力してください'); renderBackItemManageList(); return; }
   await sb.from('back_items').update({ [field]: num }).eq('id', id);
+  await renderBackItemManageList();
   populateSelects();
 };
 window.toggleBackItemActive = async function(id, newVal){
   await sb.from('back_items').update({ is_active: newVal }).eq('id', id);
-  renderBackItemManageList();
+  await renderBackItemManageList();
   populateSelects();
 };
 window.addBackItem = async function(){
@@ -845,7 +846,7 @@ window.addBackItem = async function(){
   document.getElementById('new-backitem-name').value = '';
   document.getElementById('new-backitem-price').value = '';
   document.getElementById('new-backitem-back').value = '';
-  renderBackItemManageList();
+  await renderBackItemManageList();
   populateSelects();
 };
 async function renderBackRecords(){
