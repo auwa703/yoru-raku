@@ -86,6 +86,26 @@ create table store_daily_settings (
   updated_at timestamptz not null default now()
 );
 
+-- 店舗ごとに運営者(SUPER_ADMIN)が自由に追加できるカスタム設定項目。
+-- 固定スキーマに項目を追加せずに、店舗単位の特別対応・実験的な機能フラグを持たせるための仕組み。
+create table store_custom_settings (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references stores(id) on delete cascade,
+  key text not null,             -- プログラムから参照する識別子（例：allow_early_payroll）
+  label text not null,           -- 管理画面に表示する名前（例：給与前払いを許可）
+  value_type text not null default 'boolean', -- boolean / text / number
+  value_boolean boolean,
+  value_text text,
+  value_number numeric,
+  created_by uuid references auth.users(id), -- 追加したSUPER_ADMIN
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(store_id, key)
+);
+-- SUPER_ADMIN専用（Netlify Functions側でservice role keyを使って読み書きする）。
+-- 店舗の一般ユーザーには一切公開しないため、クライアント向けポリシーは作成しない。
+alter table store_custom_settings enable row level security;
+
 -- ----------------------------------------------------------
 -- 2. スタッフ・勤怠
 -- ----------------------------------------------------------
