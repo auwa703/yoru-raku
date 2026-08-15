@@ -6,6 +6,8 @@
 <title>SUPER_ADMIN｜よるラク</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/app/_shared/supabase-client.js"></script>
 <style>
   :root{
     --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
@@ -76,7 +78,10 @@
 <div class="status-bar"></div>
 <header>
   <div class="brand"><div class="brand-mark"></div>よるラク <span class="admin-badge">SUPER_ADMIN</span></div>
-  <div style="font-size:12.5px;color:#9aa3b5;">運営者専用ページ — 一般の店舗アカウントからはアクセスできません</div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span style="font-size:12.5px;color:#9aa3b5;">運営者専用ページ — 一般の店舗アカウントからはアクセスできません</span>
+    <button class="icon-btn" style="color:#9aa3b5;" onclick="sb.auth.signOut().then(()=>location.href='/admin/login.html')">ログアウト</button>
+  </div>
 </header>
 
 <div class="wrap">
@@ -96,7 +101,7 @@
   <div class="card">
     <table>
       <thead><tr>
-        <th>店舗名</th><th>登録日</th><th>契約プラン</th><th>契約状態</th><th>スタッフ人数</th><th>最終利用日</th><th></th>
+        <th>店舗名</th><th>登録日</th><th>契約プラン</th><th>契約状態</th><th>スタッフ人数</th><th></th>
       </tr></thead>
       <tbody id="store-table-body"></tbody>
     </table>
@@ -146,33 +151,52 @@ function defaultDailySettings(){
   return s;
 }
 
-// ダミーデータ（実装時はSupabaseの stores / subscriptions / staff / audit_logs / store_daily_settings / store_custom_settings から集計する）
-let stores = [
-  {id:1, name:'DEMO LOUNGE', registeredAt:'2026-06-01', plan:'standard', status:'trialing', isMonitor:false, staffCount:3, lastUsed:'2026-08-14',
-    dailySettings: defaultDailySettings(), customSettings: []},
-  {id:2, name:'スナックあかり', registeredAt:'2026-05-12', plan:'light', status:'active', isMonitor:false, staffCount:4, lastUsed:'2026-08-13',
-    dailySettings: {...defaultDailySettings(), use_purchases:false, use_other_income:false}, customSettings: []},
-  {id:3, name:'BAR MOON', registeredAt:'2026-04-20', plan:'pro', status:'active', isMonitor:false, staffCount:8, lastUsed:'2026-08-14',
-    dailySettings: defaultDailySettings(), customSettings: [
-      {key:'allow_early_payroll', label:'給与前払いを許可', enabled:true},
-    ]},
-  {id:4, name:'ラウンジ雅', registeredAt:'2026-07-02', plan:'standard', status:'past_due', isMonitor:false, staffCount:5, lastUsed:'2026-08-05',
-    dailySettings: defaultDailySettings(), customSettings: []},
-  {id:5, name:'スナック花音', registeredAt:'2026-03-10', plan:'standard', status:'canceled', isMonitor:false, staffCount:2, lastUsed:'2026-07-01',
-    dailySettings: defaultDailySettings(), customSettings: []},
-  {id:6, name:'Girls Bar Luna', registeredAt:'2026-07-25', plan:'standard', status:'active', isMonitor:true, staffCount:6, lastUsed:'2026-08-14',
-    dailySettings: defaultDailySettings(), customSettings: []},
-];
+let stores = [];
+let currentUserId = null;
+
+async function adminApi(action, body){
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch('/.netlify/functions/admin-api?action=' + action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+    body: JSON.stringify({ action, ...body }),
+  });
+  const responseBody = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(responseBody.error || 'リクエストに失敗しました');
+  return responseBody;
+}
+
+async function boot(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = '/admin/login.html'; return; }
+  currentUserId = session.user.id;
+  try {
+    const { stores: list } = await adminApi('list_stores', {});
+    stores = list;
+  } catch (err) {
+    if (err.message === '管理者権限がありません') {
+      alert('このアカウントには管理者権限がありません。');
+      await sb.auth.signOut();
+    }
+    window.location.href = '/admin/login.html';
+    return;
+  }
+  renderStats();
+  renderTable();
+}
 
 const planLabel = {light:'LIGHT', standard:'STANDARD', pro:'PRO'};
 const statusLabel = {trialing:'無料体験中', active:'契約中', past_due:'支払い遅延', canceled:'解約済'};
 
 let currentSettingsStoreId = null;
 
-window.openStoreSettings = function(id){
+window.openStoreSettings = async function(id){
   currentSettingsStoreId = id;
   const s = stores.find(x=>x.id===id);
   document.getElementById('settings-store-name').textContent = `${s.name} の詳細設定`;
+  const detail = await adminApi('get_store_detail', { store_id: id });
+  s.dailySettings = Object.keys(detail.dailySettings).length ? detail.dailySettings : defaultDailySettings();
+  s.customSettings = detail.customSettings.map(c => ({ id: c.id, key: c.key, label: c.label, enabled: c.value_boolean }));
   renderFlagList();
   renderCustomList();
   document.getElementById('store-settings-overlay').style.display = 'flex';
@@ -193,9 +217,10 @@ function renderFlagList(){
       </label>
     </div>`).join('');
 }
-window.toggleDailySetting = function(key, checked){
+window.toggleDailySetting = async function(key, checked){
   const s = stores.find(x=>x.id===currentSettingsStoreId);
   s.dailySettings[key] = checked;
+  await adminApi('update_daily_settings', { store_id: currentSettingsStoreId, settings: s.dailySettings });
   showToast(`「${DAILY_SETTING_FLAGS.find(f=>f.key===key).label}」を${checked ? '有効' : '無効'}にしました`);
 };
 
@@ -213,20 +238,23 @@ function renderCustomList(){
         <input type="checkbox" ${c.enabled ? 'checked' : ''} onchange="toggleCustomSetting('${c.key}', this.checked)">
         <span class="slider"></span>
       </label>
-      <button class="icon-btn" onclick="removeCustomSetting('${c.key}')">削除</button>
+      <button class="icon-btn" onclick="removeCustomSetting('${c.id}')">削除</button>
     </div>`).join('');
 }
-window.toggleCustomSetting = function(key, checked){
+window.toggleCustomSetting = async function(key, checked){
   const s = stores.find(x=>x.id===currentSettingsStoreId);
-  s.customSettings.find(c=>c.key===key).enabled = checked;
+  const c = s.customSettings.find(c=>c.key===key);
+  c.enabled = checked;
+  await adminApi('upsert_custom_setting', { store_id: currentSettingsStoreId, key: c.key, label: c.label, value_boolean: checked });
 };
-window.removeCustomSetting = function(key){
+window.removeCustomSetting = async function(id){
   const s = stores.find(x=>x.id===currentSettingsStoreId);
   if(!confirm('この項目を削除しますか？')) return;
-  s.customSettings = s.customSettings.filter(c=>c.key!==key);
+  await adminApi('delete_custom_setting', { id });
+  s.customSettings = s.customSettings.filter(c=>c.id!==id);
   renderCustomList();
 };
-window.addCustomSetting = function(){
+window.addCustomSetting = async function(){
   const input = document.getElementById('new-custom-label');
   const label = input.value.trim();
   if(!label){ alert('項目名を入力してください'); return; }
@@ -236,7 +264,9 @@ window.addCustomSetting = function(){
     .replace(/^_+|_+$/g, '')
     .toLowerCase() || ('custom_' + Date.now().toString(36));
   if(s.customSettings.some(c=>c.key===key)){ alert('同じ名前の項目がすでにあります'); return; }
-  s.customSettings.push({key, label, enabled:true});
+  await adminApi('upsert_custom_setting', { store_id: currentSettingsStoreId, key, label, value_boolean: true });
+  const detail = await adminApi('get_store_detail', { store_id: currentSettingsStoreId });
+  s.customSettings = detail.customSettings.map(c => ({ id: c.id, key: c.key, label: c.label, enabled: c.value_boolean }));
   input.value = '';
   renderCustomList();
   showToast(`「${label}」を追加しました`);
@@ -268,37 +298,39 @@ function renderTable(){
       <td>${s.name}${s.isMonitor ? '<span class="badge trialing" style="margin-left:6px;">モニター</span>' : ''}</td>
       <td>${s.registeredAt}</td>
       <td>
-        <select class="plan-select" onchange="updatePlan(${s.id}, this.value)">
+        <select class="plan-select" onchange="updatePlan('${s.id}', this.value)">
+          <option value="" ${!s.plan?'selected':''}>未設定</option>
           ${Object.keys(planLabel).map(p=>`<option value="${p}" ${p===s.plan?'selected':''}>${planLabel[p]}</option>`).join('')}
         </select>
       </td>
-      <td><span class="badge ${s.status}">${statusLabel[s.status]}</span></td>
+      <td><span class="badge ${s.status}">${statusLabel[s.status] || s.status}</span></td>
       <td>${s.staffCount}人</td>
-      <td>${s.lastUsed}</td>
       <td style="white-space:nowrap;">
-        <button class="icon-btn" onclick="openStoreSettings(${s.id})">詳細設定</button>
+        <button class="icon-btn" onclick="openStoreSettings('${s.id}')">詳細設定</button>
         ${s.status!=='canceled'
-          ? `<button class="icon-btn" style="margin-left:10px;" onclick="suspendStore(${s.id})">利用停止にする</button>`
-          : `<button class="icon-btn" style="margin-left:10px;" onclick="reactivateStore(${s.id})">再開する</button>`}
+          ? `<button class="icon-btn" style="margin-left:10px;" onclick="suspendStore('${s.id}')">利用停止にする</button>`
+          : `<button class="icon-btn" style="margin-left:10px;" onclick="reactivateStore('${s.id}')">再開する</button>`}
       </td>
     </tr>`).join('');
 }
 
-window.updatePlan = function(id, plan){
-  // 実装時：subscriptions.plan_id をSupabase経由で更新する（Stripe側の契約とは別に、機能プランのみ手動で上書きするケース）
+window.updatePlan = async function(id, plan){
   const s = stores.find(x=>x.id===id);
-  s.plan = plan;
-  showToast(`${s.name} のプランを ${planLabel[plan]} に変更しました`);
+  await adminApi('update_plan', { store_id: id, plan_id: plan || null });
+  s.plan = plan || null;
+  showToast(`${s.name} のプランを ${plan ? planLabel[plan] : '未設定'} に変更しました`);
 };
-window.suspendStore = function(id){
+window.suspendStore = async function(id){
   const s = stores.find(x=>x.id===id);
   if(!confirm(`${s.name} を利用停止にしますか？`)) return;
+  await adminApi('suspend_store', { store_id: id });
   s.status = 'canceled';
   renderStats(); renderTable();
   showToast(`${s.name} を利用停止にしました`);
 };
-window.reactivateStore = function(id){
+window.reactivateStore = async function(id){
   const s = stores.find(x=>x.id===id);
+  await adminApi('reactivate_store', { store_id: id });
   s.status = 'active';
   renderStats(); renderTable();
   showToast(`${s.name} の利用を再開しました`);
@@ -318,8 +350,7 @@ function showToast(msg){
   window._adminToastTimer = setTimeout(()=>{ el.style.display='none'; }, 2400);
 }
 
-renderStats();
-renderTable();
+boot();
 </script>
 </body>
 </html>
