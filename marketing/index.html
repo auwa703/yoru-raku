@@ -39,7 +39,7 @@
   .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink);padding:10px 18px;font-size:14px;}
   .btn-ghost:hover{border-color:var(--dusk);color:var(--dusk);}
   .btn-lg{padding:15px 26px;font-size:15.5px;border-radius:12px;}
-  @media(max-width:760px){nav.headnav{display:none;} .head-cta .btn-ghost{display:none;}}
+  @media(max-width:760px){nav.headnav{display:none;} .head-cta .btn-ghost{display:none;} .head-cta .btn-ghost.login-link{display:inline-flex;padding:9px 12px;}}
 
   /* hero */
   .hero{padding:64px 0 40px;}
@@ -144,6 +144,7 @@
       <a href="/demo">デモ</a>
     </nav>
     <div class="head-cta">
+      <a class="btn btn-ghost login-link" href="/login">ログイン</a>
       <a class="btn btn-ghost" href="/demo">デモを見る</a>
       <a class="btn btn-primary" href="/signup">無料で試す</a>
     </div>
