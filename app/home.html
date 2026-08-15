@@ -540,14 +540,17 @@ let dailySettingsCache = {};
 // store_settings.business_day_switch_time を使い、verify-attendance.tsと同じロジックで
 // 「今の営業日」を計算する（深夜営業で日をまたいでも同じ営業日として扱うため）。
 function currentBusinessDate(){
+  // netlify/functions/verify-attendance.ts の resolveBusinessDate() と完全に同じロジック。
+  // ブラウザのローカルタイムゾーンに依存しないよう、UTC基準でJSTへ変換してから判定する。
   const switchTime = storeSettingsCache.business_day_switch_time || '05:00:00';
   const [swH, swM] = switchTime.split(':').map(n => parseInt(n, 10));
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const nowUtc = new Date();
+  const nowJst = new Date(nowUtc.getTime() + 9 * 60 * 60 * 1000);
+  const businessDate = new Date(nowJst);
+  const nowMinutes = nowJst.getUTCHours() * 60 + nowJst.getUTCMinutes();
   const switchMinutes = swH * 60 + (swM || 0);
-  const d = new Date(now);
-  if (nowMinutes < switchMinutes) d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  if (nowMinutes < switchMinutes) businessDate.setUTCDate(businessDate.getUTCDate() - 1);
+  return businessDate.toISOString().slice(0, 10);
 }
 function currentMonthRange(){
   const now = new Date();
@@ -863,7 +866,7 @@ window.addBackRecord = async function(){
   if (!staffId || !itemId) { alert('スタッフとバック項目を選んでください'); return; }
   const item = backItemsCache.find(i => i.id === itemId);
   await sb.from('back_records').insert({ store_id: currentStoreId, staff_id: staffId, back_item_id: itemId, business_date: currentBusinessDate(), quantity: 1, amount: item.back_amount });
-  renderBackRecords();
+  await renderBackRecords();
   renderHomeStats();
 };
 async function renderDailyPays(){
@@ -882,7 +885,7 @@ window.addDailyPay = async function(){
   if (!staffId || isNaN(amount) || amount <= 0) { alert('スタッフと金額を正しく入力してください'); return; }
   await sb.from('daily_payments').insert({ store_id: currentStoreId, staff_id: staffId, business_date: currentBusinessDate(), amount, pay_source: source });
   document.getElementById('pay-amount').value = '';
-  renderDailyPays();
+  await renderDailyPays();
   renderHomeStats();
 };
 
