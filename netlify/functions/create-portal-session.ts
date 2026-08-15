@@ -19,7 +19,25 @@ export const handler: Handler = async (event) => {
     if (!store_id) {
       return { statusCode: 400, body: JSON.stringify({ error: 'store_id is required' }) };
     }
-    // TODO: 認証チェック（呼び出しユーザーが store_id の店舗に所属しているか確認する）
+
+    const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+    const token = authHeader?.replace(/^Bearer\s+/i, '');
+    if (!token) {
+      return { statusCode: 401, body: JSON.stringify({ error: '認証が必要です' }) };
+    }
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return { statusCode: 401, body: JSON.stringify({ error: '認証が必要です' }) };
+    }
+    const { data: membership } = await supabase
+      .from('store_members')
+      .select('store_id')
+      .eq('user_id', userData.user.id)
+      .eq('store_id', store_id)
+      .maybeSingle();
+    if (!membership) {
+      return { statusCode: 403, body: JSON.stringify({ error: 'この店舗の操作権限がありません' }) };
+    }
 
     const { data: sub, error } = await supabase
       .from('subscriptions')
@@ -34,7 +52,7 @@ export const handler: Handler = async (event) => {
     const appUrl = process.env.PUBLIC_APP_URL || 'https://app.example.com';
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: sub.stripe_customer_id,
-      return_url: `${appUrl}/billing`,
+      return_url: `${appUrl}/app/home.html`,
     });
 
     return { statusCode: 200, body: JSON.stringify({ url: portalSession.url }) };

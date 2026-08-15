@@ -27,7 +27,25 @@ export const handler: Handler = async (event) => {
     if (!store_id || !plan_id || !PRICE_ID_MAP[plan_id]) {
       return { statusCode: 400, body: JSON.stringify({ error: 'store_id または plan_id が不正です' }) };
     }
-    // TODO: 認証チェック（呼び出しユーザーが store_id の店舗に所属しているか確認する）
+
+    const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+    const token = authHeader?.replace(/^Bearer\s+/i, '');
+    if (!token) {
+      return { statusCode: 401, body: JSON.stringify({ error: '認証が必要です' }) };
+    }
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return { statusCode: 401, body: JSON.stringify({ error: '認証が必要です' }) };
+    }
+    const { data: membership } = await supabase
+      .from('store_members')
+      .select('store_id')
+      .eq('user_id', userData.user.id)
+      .eq('store_id', store_id)
+      .maybeSingle();
+    if (!membership) {
+      return { statusCode: 403, body: JSON.stringify({ error: 'この店舗の操作権限がありません' }) };
+    }
 
     const { data: store, error: storeErr } = await supabase
       .from('stores')

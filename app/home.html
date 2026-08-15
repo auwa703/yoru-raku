@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>よるラク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/app/_shared/supabase-client.js"></script>
+<script src="/app/_shared/auth-guard.js"></script>
+<style>
+  :root{
+    --bg:#f2f4f7;--panel:#ffffff;--ink:#232228;--ink-soft:#6b6a72;--line:#e6e4de;
+    --dusk:#0d1b2a;--dusk-deep:#08111c;--brass:#ff7a59;--brass-soft:#ffe8df;
+    --good:#4b7a63;--good-soft:#e7f0ea;--warn:#b24444;--warn-soft:#fbe9e7;
+    --radius:14px;--shadow:0 1px 3px rgba(35,34,40,.06),0 8px 24px rgba(35,34,40,.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.brand-name{font-family:'Noto Sans JP',sans-serif;font-weight:900;}
+  button,input,select,textarea{font-family:inherit;}
+
+  .app-shell{display:flex;min-height:100vh;}
+  .sidenav{width:210px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:3px;}
+  .brand{display:flex;align-items:center;gap:9px;padding:4px 8px 18px;}
+  .brand-mark{
+    width:28px;height:28px;border-radius:50%;flex-shrink:0;
+    background:conic-gradient(from -50deg, var(--brass) 0deg 110deg, var(--dusk) 110deg 360deg);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+  }
+  .brand-name{font-size:14px;font-weight:700;color:var(--dusk-deep);}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:10px;color:var(--ink-soft);text-decoration:none;font-size:13.5px;font-weight:500;background:none;border:none;text-align:left;cursor:pointer;width:100%;}
+  .nav-item .ic{width:18px;text-align:center;}
+  .nav-item.active{background:linear-gradient(135deg,var(--dusk),var(--brass));color:#fff;}
+  .nav-item:not(.active):hover{background:var(--bg);}
+  .nav-signout{margin-top:auto;padding-top:10px;border-top:1px solid var(--line);}
+
+  .main{flex:1;min-width:0;padding:26px 22px 100px;max-width:820px;}
+  .view{display:none;}
+  .view.active{display:block;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .page-title{font-size:19px;font-weight:900;margin:0 0 4px;color:var(--dusk-deep);}
+  .page-sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 20px;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;}
+  .card h3{margin:0 0 12px;font-size:14.5px;}
+  .label{font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
+  .value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;font-family:'Montserrat',sans-serif;}
+  .value.money::before{content:'¥';font-size:14px;color:var(--brass);margin-right:2px;font-weight:700;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  @media(max-width:480px){.grid3{grid-template-columns:1fr 1fr;} .value{font-size:19px;}}
+
+  .btn{font-weight:700;border:none;border-radius:9px;cursor:pointer;font-size:13px;padding:9px 15px;background:linear-gradient(135deg,var(--dusk),var(--brass));color:#fff;}
+  .btn:hover{background:var(--dusk-deep);}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink);}
+  .btn.ghost:hover{border-color:var(--dusk);color:var(--dusk);}
+  .btn.sm{padding:6px 11px;font-size:12px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-weight:500;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:6px 4px;font-size:11px;}
+  td{padding:9px 4px;border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .right{text-align:right;}
+
+  .staff-row{display:flex;align-items:center;justify-content:space-between;padding:11px 4px;border-bottom:1px solid var(--line);}
+  .staff-row:last-child{border-bottom:none;}
+  .staff-name{font-weight:700;font-size:14px;}
+  .staff-status{font-size:11.5px;color:var(--ink-soft);}
+  .staff-status.working{color:var(--good);font-weight:700;}
+
+  .denom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:center;padding:7px 0;}
+  .denom-row .d{font-weight:700;font-size:13.5px;}
+  .denom-row input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:7px;font-size:15px;text-align:right;}
+  .denom-row .sub{font-size:12.5px;color:var(--ink-soft);text-align:right;}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .form-grid label{display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;}
+  .form-grid input,.form-grid select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font-size:14px;}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge.warn{background:var(--warn-soft);color:var(--warn);}
+  .badge.good{background:var(--good-soft);color:var(--good);}
+
+  .switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .slider{position:absolute;inset:0;background:#dcdad4;border-radius:22px;transition:.15s;cursor:pointer;}
+  .switch .slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
+  .switch input:checked + .slider{background:var(--brass);}
+  .switch input:checked + .slider::before{transform:translateX(16px);}
+  .flag-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .flag-row:last-child{border-bottom:none;}
+
+  .bottomnav{display:none;}
+  @media(max-width:820px){
+    .sidenav{display:none;}
+    .main{padding:16px 12px 90px;max-width:100%;}
+    .grid2{grid-template-columns:1fr 1fr;}
+    .form-grid{grid-template-columns:1fr;}
+    .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;z-index:50;overflow-x:auto;}
+    .bottomnav button{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-soft);background:none;border:none;font-size:10px;font-weight:500;padding:6px 5px;border-radius:10px;min-width:48px;flex-shrink:0;}
+    .bottomnav button .ic{font-size:17px;}
+    .bottomnav button.active{color:var(--dusk);font-weight:700;}
+    input,select,button{font-size:16px;}
+  }
+
+  @media print{
+    .sidenav,.bottomnav,.view:not(.print-target){display:none !important;}
+    .view.print-target{display:block !important;}
+    .main{padding:0;max-width:100%;}
+    body{background:#fff;}
+    button{display:none !important;}
+  }
+
+  #boot-loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink-soft);z-index:500;}
+</style>
+</head>
+<body>
+
+<div id="boot-loading">読み込み中...</div>
+
+<div class="app-shell" id="app-shell" style="display:none;">
+  <nav class="sidenav">
+    <div class="brand"><div class="brand-mark"></div><div class="brand-name" id="sidenav-store-name">-</div></div>
+    <button class="nav-item active" data-view="home"><span class="ic">🏠</span>ホーム</button>
+    <button class="nav-item" data-view="staff"><span class="ic">👤</span>スタッフ管理</button>
+    <button class="nav-item" data-view="attendance"><span class="ic">⏱</span>勤怠</button>
+    <button class="nav-item" data-view="backs"><span class="ic">🍾</span>バック・日払い</button>
+    <button class="nav-item" data-view="report"><span class="ic">📋</span>今日の営業</button>
+    <button class="nav-item" data-view="payroll"><span class="ic">💴</span>給与</button>
+    <button class="nav-item" data-view="monthly"><span class="ic">📈</span>月次集計</button>
+    <button class="nav-item" data-view="settings"><span class="ic">⚙️</span>設定</button>
+    <div class="nav-signout">
+      <button class="nav-item" onclick="signOutAndRedirect()"><span class="ic">🚪</span>ログアウト</button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ホーム -->
+    <section class="view active" id="view-home">
+      <h1 class="page-title">おかえりなさい</h1>
+      <p class="page-sub"><span id="home-store-name">-</span> さん — 今日やるべきことはこちらです</p>
+
+      <div class="card" id="report-status-card">
+        <div class="label" id="report-status-label">📋 今日の営業　まだ入力されていません</div>
+        <button class="btn" onclick="goTo('report')">今日の営業を入力する →</button>
+      </div>
+
+      <div class="grid2">
+        <div class="card"><div class="label">本日の出勤</div><div class="value" id="home-working-count">0人</div></div>
+        <div class="card"><div class="label">本日の日払い</div><div class="value money" id="home-dailypay">0</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="label">本日のバック合計</div><div class="value money" id="home-back-total">0</div></div>
+        <div class="card"><div class="label">今日の営業ステータス</div><div style="margin-top:6px;" id="home-report-badge"><span class="badge warn">未締め</span></div></div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div><div class="label" style="margin-bottom:0;">時給やスタッフの登録はこちらから</div></div>
+        <button class="btn ghost sm" onclick="goTo('staff')">スタッフ管理を開く →</button>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div><div class="label" style="margin-bottom:0;">今月の売上・人件費率などの集計</div></div>
+        <button class="btn ghost sm" onclick="goTo('monthly')">月次集計を見る →</button>
+      </div>
+    </section>
+
+    <!-- スタッフ管理 -->
+    <section class="view" id="view-staff">
+      <h1 class="page-title">スタッフ管理</h1>
+      <p class="page-sub">時給の変更や新しいスタッフの登録はここで行います</p>
+
+      <div class="card"><div id="staff-manage-list">読み込み中...</div></div>
+
+      <div class="card">
+        <h3>新しいスタッフを登録</h3>
+        <div class="form-grid">
+          <div><label>名前</label><input type="text" id="new-staff-name" placeholder="例：スタッフD"></div>
+          <div><label>ログインID</label><input type="text" id="new-staff-login" placeholder="例：d-staff"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>時給（円）</label><input type="number" id="new-staff-wage" placeholder="例：1400"></div>
+          <div><label>入店日</label><input type="date" id="new-staff-joined"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin:0 0 12px;font-size:13px;font-weight:500;">
+          <input type="checkbox" id="new-staff-dailypay" checked>
+          日払い対象にする
+        </label>
+        <button class="btn" onclick="addStaff()">スタッフを追加</button>
+      </div>
+
+      <div class="card" id="retired-staff-card" style="display:none;">
+        <h3>退職したスタッフ</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">給与や勤怠の対象からは外れますが、記録は残ります。再雇用も可能です。</p>
+        <div id="retired-staff-list"></div>
+      </div>
+    </section>
+
+    <!-- 勤怠 -->
+    <section class="view" id="view-attendance">
+      <h1 class="page-title">勤怠</h1>
+      <p class="page-sub">お店に設置した端末にQRコードを表示し、スタッフのスマホで読み取ってもらいます</p>
+
+      <div class="card">
+        <h3>出勤・退勤用コード</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">この画面をお店のタブレット等に常時表示しておきます。読み取り用のURLはスタッフに共有してください。</p>
+        <div style="display:flex;justify-content:center;margin:16px 0;">
+          <img id="qr-image" style="width:180px;height:180px;border:2px solid var(--dusk);border-radius:12px;" src="" alt="QRコード">
+        </div>
+        <div style="text-align:center;">
+          <div class="badge good" id="qr-timer">まもなく更新されます</div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);">
+          <button class="btn ghost sm" onclick="openAdminEdit()">🔧 管理者が手動で修正</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>本日の勤怠状況</h3>
+        <div id="staff-list">読み込み中...</div>
+      </div>
+
+      <!-- 管理者による手動修正モーダル -->
+      <div id="admin-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(28,24,21,.45);z-index:100;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:12px;padding:22px;max-width:360px;width:100%;">
+          <h3 style="margin-top:0;">勤怠を手動で修正</h3>
+          <div class="form-grid">
+            <div><label>スタッフ</label><select id="admin-edit-staff"></select></div>
+            <div><label>区分</label>
+              <select id="admin-edit-type"><option value="clock_in">出勤時刻を修正</option><option value="clock_out">退勤時刻を修正</option></select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div><label>時刻</label><input type="time" id="admin-edit-time"></div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr;">
+            <div><label>修正理由（必須）</label><input type="text" id="admin-edit-reason" placeholder="例：QR読み取り忘れのため"></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+            <button class="btn ghost sm" onclick="closeAdminEdit()">キャンセル</button>
+            <button class="btn sm" onclick="submitAdminEdit()">修正を保存</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- バック・日払い -->
+    <section class="view" id="view-backs">
+      <h1 class="page-title">バック・日払い</h1>
+      <p class="page-sub">今日のバックと日払いを登録します。登録内容は給与へ自動反映されます</p>
+
+      <div class="card">
+        <h3>バック項目の管理</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">ドリンク・予約・同伴のほか、ショット・ボトル・シャンパンなどお店独自の項目も自由に追加できます</p>
+        <div id="back-item-manage-list">読み込み中...</div>
+
+        <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);">
+          <div class="form-grid">
+            <div><label>項目名</label><input type="text" id="new-backitem-name" placeholder="例：シャンパン"></div>
+            <div><label>カテゴリー</label>
+              <select id="new-backitem-category">
+                <option value="基本">基本</option>
+                <option value="店舗独自">店舗独自</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div><label>販売価格（円・任意）</label><input type="number" id="new-backitem-price" placeholder="例：15000"></div>
+            <div><label>バック金額（円）</label><input type="number" id="new-backitem-back" placeholder="例：3000"></div>
+          </div>
+          <button class="btn ghost sm" onclick="addBackItem()">＋ バック項目を追加</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>バックを登録</h3>
+        <div class="form-grid">
+          <div><label>スタッフ</label><select id="back-staff"></select></div>
+          <div><label>バック項目</label><select id="back-item"></select></div>
+        </div>
+        <button class="btn" onclick="addBackRecord()">登録する</button>
+      </div>
+
+      <div class="card">
+        <h3>今日のバック記録</h3>
+        <div id="back-records-list"><p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p></div>
+      </div>
+
+      <div class="card">
+        <h3>日払いを登録</h3>
+        <div class="form-grid">
+          <div><label>スタッフ</label><select id="pay-staff"></select></div>
+          <div><label>金額（円）</label><input type="number" id="pay-amount" placeholder="例：10000"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>支払方法</label>
+            <select id="pay-source">
+              <option value="register_cash">レジ現金</option>
+              <option value="other_cash">別現金</option>
+              <option value="bank">銀行振込</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn" onclick="addDailyPay()">登録する</button>
+      </div>
+
+      <div class="card">
+        <h3>今日の日払い記録</h3>
+        <div id="daily-pay-list"><p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p></div>
+      </div>
+    </section>
+
+    <!-- 今日の営業 -->
+    <section class="view" id="view-report">
+      <h1 class="page-title">今日の営業</h1>
+      <p class="page-sub">表示されている項目だけ入力すればOKです。使う項目は「設定」からいつでも変更できます</p>
+
+      <div class="card" id="report-closed-banner" style="display:none;background:var(--brass-soft);border-color:var(--brass);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-weight:700;color:#8a611f;">🔒 今日の営業は締め済みです</div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">内容を修正するには、締めを解除してください</div>
+          </div>
+          <button class="btn ghost sm" onclick="reopenReport()">締めを解除する</button>
+        </div>
+      </div>
+
+      <fieldset id="report-fields" style="border:none;padding:0;margin:0;">
+      <div class="card" id="card-sales">
+        <h3>売上（決済方法別）</h3>
+        <div class="form-grid">
+          <div><label>現金</label><input type="number" id="sales-cash" placeholder="0" oninput="updateReportTotals()"></div>
+          <div><label>クレジットカード</label><input type="number" id="sales-card" placeholder="0" oninput="updateReportTotals()"></div>
+          <div><label>QR・電子決済</label><input type="number" id="sales-qr" placeholder="0" oninput="updateReportTotals()"></div>
+          <div><label>その他</label><input type="number" id="sales-other" placeholder="0" oninput="updateReportTotals()"></div>
+        </div>
+        <div class="label">総売上</div>
+        <div class="value money" id="sales-total">0</div>
+      </div>
+
+      <div class="card" id="card-visitors">
+        <h3>来店</h3>
+        <div class="form-grid">
+          <div id="field-visitor-groups"><label>来店組数</label><input type="number" id="visitor-groups" placeholder="例：8"></div>
+          <div id="field-visitor-count"><label>来店人数</label><input type="number" id="visitor-count" placeholder="例：15"></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-expenses">
+        <h3>経費・仕入</h3>
+        <div class="form-grid">
+          <div><label>内容</label><input type="text" id="exp-label" placeholder="例：氷・タクシー代"></div>
+          <div><label>金額（円）</label><input type="number" id="exp-amount" placeholder="0"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>支払方法</label>
+            <select id="exp-source">
+              <option value="register_cash">レジ現金</option>
+              <option value="bank">銀行振込</option>
+              <option value="card">クレジットカード</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn ghost sm" onclick="addExpense()">追加する</button>
+        <div id="expense-list" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card" id="card-notes">
+        <h3>営業メモ</h3>
+        <textarea id="business-note" rows="3" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;" placeholder="引継ぎ事項やトラブルがあれば記入してください" onchange="saveReportNote()"></textarea>
+      </div>
+
+      <div class="card" id="card-cash-count">
+        <h3>金種を数える</h3>
+        <p style="font-size:12px;color:var(--ink-soft);margin-top:-6px;">お札・硬貨の枚数を入力すると、レジにある金額を自動計算します</p>
+        <div id="denom-wrap"></div>
+        <div style="margin-top:10px;padding-top:12px;border-top:1px dashed var(--line);">
+          <div class="label">現金実在高（実際にレジにある金額）</div>
+          <div class="value money" id="cash-actual">0</div>
+        </div>
+      </div>
+
+      <div class="card" id="card-cash-closing">
+        <h3>レジ締め</h3>
+        <div class="grid2">
+          <div><div class="label">理論現金残高（レジ準備金＋現金売上－現金支出）</div><div class="value money" id="cash-theoretical">0</div></div>
+          <div><div class="label">現金差額</div><div class="value money" id="cash-diff">0</div></div>
+        </div>
+        <button class="btn" style="margin-top:12px;" id="close-report-btn" onclick="closeReport()">今日の営業を締める</button>
+      </div>
+      </fieldset>
+    </section>
+
+    <!-- 給与 -->
+    <section class="view" id="view-payroll">
+      <h1 class="page-title">給与</h1>
+      <p class="page-sub">勤務時間・バック・日払いから、今月の給与見込みを自動計算します</p>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn ghost sm" onclick="exportPayrollCsv()">📄 CSV出力</button>
+        <button class="btn ghost sm" onclick="printView('view-payroll')">🖨️ PDF出力</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>スタッフ</th><th class="right">勤務時間</th><th class="right">基本給</th><th class="right">バック</th><th class="right">日払い</th><th class="right">支給見込</th><th></th></tr></thead>
+          <tbody id="payroll-table"><tr><td colspan="7">読み込み中...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 月次集計 -->
+    <section class="view" id="view-monthly">
+      <h1 class="page-title">月次集計</h1>
+      <p class="page-sub" id="monthly-period-label">今月の集計</p>
+      <div style="display:flex;gap:8px;margin:12px 0;">
+        <button class="btn ghost sm" onclick="exportMonthlyCsv()">📄 CSV出力</button>
+        <button class="btn ghost sm" onclick="printView('view-monthly')">🖨️ PDF出力</button>
+      </div>
+
+      <div class="grid2">
+        <div class="card"><div class="label">総売上</div><div class="value money" id="m-total-sales">0</div></div>
+        <div class="card"><div class="label">営業日数</div><div class="value" id="m-business-days">0日</div></div>
+      </div>
+      <div class="grid3">
+        <div class="card"><div class="label">現金売上</div><div class="value money" id="m-cash-sales">0</div></div>
+        <div class="card"><div class="label">カード</div><div class="value money" id="m-card-sales">0</div></div>
+        <div class="card"><div class="label">電子決済</div><div class="value money" id="m-qr-sales">0</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="label">来店組数</div><div class="value" id="m-visitor-groups">0組</div></div>
+        <div class="card"><div class="label">客単価</div><div class="value money" id="m-avg-spend">0</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="label">給与合計（バック含む）</div><div class="value money" id="m-payroll-total">0</div></div>
+        <div class="card"><div class="label">人件費率<span style="font-weight:400;color:var(--ink-soft);font-size:11px;">（給与÷売上）</span></div><div class="value" id="m-labor-rate">0%</div></div>
+      </div>
+      <div class="card"><div class="label">経費・仕入合計</div><div class="value money" id="m-expense-total">0</div></div>
+    </section>
+
+    <!-- 設定 -->
+    <section class="view" id="view-settings">
+      <h1 class="page-title">設定</h1>
+      <p class="page-sub">お店の基本情報や、日々の入力項目を設定します</p>
+
+      <div class="card">
+        <h3>店舗の基本設定</h3>
+        <div class="form-grid">
+          <div><label>店舗名</label><input type="text" id="set-store-name" onchange="onStoreSettingChange()"></div>
+          <div><label>基本時給（円）<span style="font-weight:400;color:var(--ink-soft);">　※新規スタッフ登録時の目安</span></label><input type="number" id="set-base-wage" min="0" step="10" onchange="onStoreSettingChange()"></div>
+        </div>
+        <div class="form-grid">
+          <div><label>締め日</label>
+            <select id="set-closing-day" onchange="onStoreSettingChange()">
+              <option value="31">末日</option><option value="15">15日</option><option value="20">20日</option><option value="25">25日</option>
+            </select>
+          </div>
+          <div><label>給与支払日</label>
+            <select id="set-payday" onchange="onStoreSettingChange()">
+              <option value="31">当月末日</option><option value="5">翌月5日</option><option value="10">翌月10日</option><option value="25">翌月25日</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label>営業日の切替時刻<span style="font-weight:400;color:var(--ink-soft);">　※深夜営業対応</span></label>
+            <input type="time" id="set-night-switch" onchange="onStoreSettingChange()">
+            <span style="font-size:11px;color:var(--ink-soft);display:block;margin-top:4px;">例：5:00に設定すると、深夜2時の退勤も「前日の営業日」として記録されます</span>
+          </div>
+          <div>
+            <label>レジ準備金（円）</label>
+            <input type="number" id="set-register-float" min="0" step="1000" onchange="onStoreSettingChange()">
+            <span style="font-size:11px;color:var(--ink-soft);display:block;margin-top:4px;">営業開始時にレジへ入れておく現金。現金締めの計算に使われます</span>
+          </div>
+        </div>
+        <div id="store-settings-saved-note" style="font-size:12px;color:var(--good);margin-top:8px;display:none;">✓ 保存しました</div>
+      </div>
+
+      <div class="card">
+        <h3>おすすめの組み合わせ</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn ghost sm" onclick="applyPreset('simple')">まず簡単に使いたい</button>
+          <button class="btn ghost sm" onclick="applyPreset('cashOnly')">金種だけ数えたい</button>
+          <button class="btn ghost sm" onclick="applyPreset('cashClosing')">レジの差額まで確認したい</button>
+          <button class="btn ghost sm" onclick="applyPreset('all')">店舗全体を管理したい</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>今日の営業で使う項目</h3>
+        <div id="daily-settings-list">読み込み中...</div>
+      </div>
+
+      <div class="card">
+        <h3>お支払い・契約管理</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <div>
+            <div class="label">現在のプラン</div>
+            <div class="value" style="font-size:18px;" id="current-plan-label">-</div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;" id="trial-remain-label"></div>
+          </div>
+          <button class="btn ghost sm" onclick="openBillingPortal()">お支払い・契約管理を開く</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:0;">カードの変更・プラン変更・解約は、こちらから安全な決済画面（Stripe）で行えます。</p>
+      </div>
+
+      <div class="card">
+        <h3>スタッフログイン用リンク</h3>
+        <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">スタッフに以下のリンクを共有すると、店舗コードの入力なしでログインできます。</p>
+        <input type="text" id="staff-login-link" readonly style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;background:var(--bg);">
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<nav class="bottomnav">
+  <button class="nav-item active" data-view="home"><span class="ic">🏠</span>ホーム</button>
+  <button class="nav-item" data-view="staff"><span class="ic">👤</span>スタッフ</button>
+  <button class="nav-item" data-view="attendance"><span class="ic">⏱</span>勤怠</button>
+  <button class="nav-item" data-view="backs"><span class="ic">🍾</span>バック</button>
+  <button class="nav-item" data-view="report"><span class="ic">📋</span>営業</button>
+  <button class="nav-item" data-view="payroll"><span class="ic">💴</span>給与</button>
+  <button class="nav-item" data-view="settings"><span class="ic">⚙️</span>設定</button>
+</nav>
+
+<script>
+function yen(n){ return Math.round(n||0).toLocaleString('ja-JP'); }
+
+let currentStoreId = null;
+let currentUserId = null;
+let staffCache = [];
+let backItemsCache = [];
+let storeSettingsCache = {};
+let dailySettingsCache = {};
+
+// store_settings.business_day_switch_time を使い、verify-attendance.tsと同じロジックで
+// 「今の営業日」を計算する（深夜営業で日をまたいでも同じ営業日として扱うため）。
+function currentBusinessDate(){
+  const switchTime = storeSettingsCache.business_day_switch_time || '05:00:00';
+  const [swH, swM] = switchTime.split(':').map(n => parseInt(n, 10));
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const switchMinutes = swH * 60 + (swM || 0);
+  const d = new Date(now);
+  if (nowMinutes < switchMinutes) d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+function currentMonthRange(){
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  return { start, end };
+}
+
+// ---- ナビゲーション ----
+window.goTo = function(view){
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+  document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  if (view === 'staff') renderStaffManageList();
+  if (view === 'attendance') { renderAttendanceList(); refreshQrCode(); }
+  if (view === 'backs') { renderBackItemManageList(); renderBackRecords(); renderDailyPays(); populateSelects(); }
+  if (view === 'report') loadReport();
+  if (view === 'payroll') renderPayroll();
+  if (view === 'monthly') renderMonthly();
+  if (view === 'settings') renderSettings();
+};
+document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
+  btn.addEventListener('click', () => goTo(btn.dataset.view));
+});
+
+// ---- 起動処理 ----
+async function boot(){
+  const { user, storeId } = await requireStoreSession();
+  currentUserId = user.id;
+  currentStoreId = storeId;
+
+  const { data: store } = await sb.from('stores').select('name, staff_login_slug').eq('id', storeId).maybeSingle();
+  if (store) {
+    document.getElementById('sidenav-store-name').textContent = store.name;
+    document.getElementById('home-store-name').textContent = store.name;
+    document.getElementById('staff-login-link').value = location.origin + '/login?store=' + store.staff_login_slug;
+  }
+
+  const { data: settings } = await sb.from('store_settings').select('*').eq('store_id', storeId).maybeSingle();
+  storeSettingsCache = settings || {};
+
+  const { data: daily } = await sb.from('store_daily_settings').select('*').eq('store_id', storeId).maybeSingle();
+  dailySettingsCache = daily || {};
+
+  await loadStaff();
+  await loadBackItems();
+  await renderHomeStats();
+
+  document.getElementById('boot-loading').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'flex';
+}
+
+async function loadStaff(){
+  const { data } = await sb.from('staff').select('*').order('created_at', { ascending: true });
+  staffCache = data || [];
+}
+async function loadBackItems(){
+  const { data } = await sb.from('back_items').select('*').order('sort_order', { ascending: true });
+  backItemsCache = data || [];
+}
+
+// ---- ホーム ----
+async function renderHomeStats(){
+  const bd = currentBusinessDate();
+  const activeStaff = staffCache.filter(s => s.status !== 'retired');
+
+  const { data: attendanceToday } = await sb.from('attendance_records').select('staff_id, clock_out').eq('business_date', bd);
+  const workingCount = (attendanceToday || []).filter(a => !a.clock_out).length;
+  document.getElementById('home-working-count').textContent = workingCount + '人';
+
+  const { data: payToday } = await sb.from('daily_payments').select('amount').eq('business_date', bd);
+  const payTotal = (payToday || []).reduce((s, p) => s + p.amount, 0);
+  document.getElementById('home-dailypay').textContent = yen(payTotal);
+
+  const { data: backToday } = await sb.from('back_records').select('amount').eq('business_date', bd);
+  const backTotal = (backToday || []).reduce((s, b) => s + (b.amount || 0), 0);
+  document.getElementById('home-back-total').textContent = yen(backTotal);
+
+  const { data: report } = await sb.from('daily_reports').select('status').eq('business_date', bd).maybeSingle();
+  const badge = document.getElementById('home-report-badge');
+  const label = document.getElementById('report-status-label');
+  if (report && report.status === 'closed') {
+    badge.innerHTML = '<span class="badge good">締め済み</span>';
+    label.textContent = '📋 今日の営業　締め済みです';
+  } else {
+    badge.innerHTML = '<span class="badge warn">未締め</span>';
+    label.textContent = '📋 今日の営業　まだ入力されていません';
+  }
+}
+
+// ---- スタッフ管理 ----
+async function renderStaffManageList(){
+  await loadStaff();
+  const wrap = document.getElementById('staff-manage-list');
+  const active = staffCache.filter(s => s.status !== 'retired');
+  wrap.innerHTML = active.map(s => `
+    <div class="staff-row">
+      <div style="flex:1;">
+        <div class="staff-name">${escapeHtml(s.name)}</div>
+        <div class="staff-status">ID: ${escapeHtml(s.login_id || '未設定')}　／　入店日: ${s.joined_at || '未設定'}</div>
+        <div class="form-grid" style="grid-template-columns:auto 1fr;align-items:center;gap:6px;margin:6px 0 0;max-width:220px;">
+          <label style="margin:0;">時給</label>
+          <input type="number" value="${s.hourly_wage ?? ''}" min="0" step="10" onchange="updateStaffWage('${s.id}', this.value)">
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:13px;font-weight:500;">
+          <input type="checkbox" ${s.daily_pay_eligible ? 'checked' : ''} onchange="toggleStaffDailyPay('${s.id}', this.checked)">
+          日払い対象にする
+        </label>
+      </div>
+      <button class="btn ghost sm" onclick="retireStaff('${s.id}')">退職として処理</button>
+    </div>`).join('') || '<p style="font-size:13px;color:var(--ink-soft);">まだスタッフが登録されていません</p>';
+
+  const retired = staffCache.filter(s => s.status === 'retired');
+  const retiredCard = document.getElementById('retired-staff-card');
+  retiredCard.style.display = retired.length ? 'block' : 'none';
+  document.getElementById('retired-staff-list').innerHTML = retired.map(s => `
+    <div class="staff-row">
+      <div><div class="staff-name">${escapeHtml(s.name)}</div><div class="staff-status">退職日: ${s.retired_at || '-'}</div></div>
+      <button class="btn ghost sm" onclick="reactivateStaff('${s.id}')">再雇用する</button>
+    </div>`).join('');
+}
+window.updateStaffWage = async function(id, val){
+  const wage = parseFloat(val);
+  if (isNaN(wage) || wage < 0) { alert('正しい時給を入力してください'); renderStaffManageList(); return; }
+  await sb.from('staff').update({ hourly_wage: wage }).eq('id', id);
+};
+window.toggleStaffDailyPay = async function(id, checked){
+  await sb.from('staff').update({ daily_pay_eligible: checked }).eq('id', id);
+};
+window.retireStaff = async function(id){
+  if (!confirm('このスタッフを退職として処理しますか？')) return;
+  await sb.from('staff').update({ status: 'retired', retired_at: new Date().toISOString().slice(0, 10) }).eq('id', id);
+  renderStaffManageList();
+};
+window.reactivateStaff = async function(id){
+  await sb.from('staff').update({ status: 'active', retired_at: null }).eq('id', id);
+  renderStaffManageList();
+};
+window.addStaff = async function(){
+  const name = document.getElementById('new-staff-name').value.trim();
+  const loginId = document.getElementById('new-staff-login').value.trim();
+  const wage = parseFloat(document.getElementById('new-staff-wage').value);
+  const joinedAt = document.getElementById('new-staff-joined').value || new Date().toISOString().slice(0, 10);
+  const dailyPayEligible = document.getElementById('new-staff-dailypay').checked;
+  if (!name || isNaN(wage) || wage <= 0) { alert('名前と時給を正しく入力してください'); return; }
+  const { error } = await sb.from('staff').insert({
+    store_id: currentStoreId, name, login_id: loginId || null, hourly_wage: wage,
+    joined_at: joinedAt, status: 'active', daily_pay_eligible: dailyPayEligible,
+  });
+  if (error) { alert('登録に失敗しました：' + error.message); return; }
+  document.getElementById('new-staff-name').value = '';
+  document.getElementById('new-staff-login').value = '';
+  document.getElementById('new-staff-wage').value = '';
+  document.getElementById('new-staff-joined').value = '';
+  renderStaffManageList();
+};
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---- 勤怠 ----
+let qrRefreshTimer = null;
+async function refreshQrCode(){
+  clearInterval(qrRefreshTimer);
+  await fetchAndShowQr();
+  qrRefreshTimer = setInterval(fetchAndShowQr, 25000);
+}
+async function fetchAndShowQr(){
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch('/.netlify/functions/generate-attendance-qr?store_id=' + currentStoreId, {
+      headers: { Authorization: 'Bearer ' + session.access_token },
+    });
+    if (!res.ok) return;
+    const body = await res.json();
+    const attendUrl = location.origin + '/app/attend.html?payload=' + encodeURIComponent(body.qr_payload);
+    document.getElementById('qr-image').src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(attendUrl);
+  } catch (err) {
+    console.error('QR取得に失敗しました', err);
+  }
+}
+async function renderAttendanceList(){
+  await loadStaff();
+  const bd = currentBusinessDate();
+  const { data: records } = await sb.from('attendance_records').select('*').eq('business_date', bd);
+  const byStaff = {};
+  (records || []).forEach(r => { byStaff[r.staff_id] = r; });
+
+  const wrap = document.getElementById('staff-list');
+  const active = staffCache.filter(s => s.status !== 'retired');
+  wrap.innerHTML = active.map(s => {
+    const r = byStaff[s.id];
+    const working = r && r.clock_in && !r.clock_out;
+    const methodTag = m => m === 'admin_manual' ? '<span class="badge warn" style="margin-left:6px;">手動修正</span>' : '';
+    let statusText = '未出勤';
+    if (r && r.clock_in && !r.clock_out) statusText = `${fmtTime(r.clock_in)} 〜 出勤中${methodTag(r.clock_in_method)}`;
+    if (r && r.clock_in && r.clock_out) statusText = `${fmtTime(r.clock_in)} 〜 ${fmtTime(r.clock_out)}（退勤済）${methodTag(r.clock_out_method)}`;
+    return `<div class="staff-row">
+      <div><div class="staff-name">${escapeHtml(s.name)}</div><div class="staff-status ${working ? 'working' : ''}">${statusText}</div></div>
+    </div>`;
+  }).join('') || '<p style="font-size:13px;color:var(--ink-soft);">まだスタッフが登録されていません</p>';
+}
+function fmtTime(iso){
+  const d = new Date(iso);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+window.openAdminEdit = function(){
+  const active = staffCache.filter(s => s.status !== 'retired');
+  document.getElementById('admin-edit-staff').innerHTML = active.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  document.getElementById('admin-edit-time').value = '';
+  document.getElementById('admin-edit-reason').value = '';
+  document.getElementById('admin-edit-modal').style.display = 'flex';
+};
+window.closeAdminEdit = function(){
+  document.getElementById('admin-edit-modal').style.display = 'none';
+};
+window.submitAdminEdit = async function(){
+  const staffId = document.getElementById('admin-edit-staff').value;
+  const type = document.getElementById('admin-edit-type').value;
+  const time = document.getElementById('admin-edit-time').value;
+  const reason = document.getElementById('admin-edit-reason').value.trim();
+  if (!time || !reason) { alert('時刻と修正理由を入力してください（修正履歴として記録されます）'); return; }
+  const bd = currentBusinessDate();
+  const isoTime = new Date(bd + 'T' + time + ':00').toISOString();
+
+  const { data: existing } = await sb.from('attendance_records').select('id').eq('staff_id', staffId).eq('business_date', bd).order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+  if (type === 'clock_in') {
+    if (existing) {
+      await sb.from('attendance_records').update({ clock_in: isoTime, clock_in_method: 'admin_manual', edited_by_admin: true, edited_by: currentUserId, edit_reason: reason }).eq('id', existing.id);
+    } else {
+      await sb.from('attendance_records').insert({ store_id: currentStoreId, staff_id: staffId, business_date: bd, clock_in: isoTime, clock_in_method: 'admin_manual', edited_by_admin: true, edited_by: currentUserId, edit_reason: reason });
+    }
+  } else {
+    if (existing) {
+      await sb.from('attendance_records').update({ clock_out: isoTime, clock_out_method: 'admin_manual', edited_by_admin: true, edited_by: currentUserId, edit_reason: reason }).eq('id', existing.id);
+    } else {
+      alert('出勤記録が見つからないため、退勤時刻のみを登録できません。先に出勤時刻を修正してください。');
+      return;
+    }
+  }
+  closeAdminEdit();
+  renderAttendanceList();
+  renderHomeStats();
+};
+
+// ---- バック・日払い ----
+function populateSelects(){
+  const active = staffCache.filter(s => s.status !== 'retired');
+  const staffOpts = active.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  const dailyPayOpts = active.filter(s => s.daily_pay_eligible).map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  document.getElementById('back-staff').innerHTML = staffOpts;
+  document.getElementById('pay-staff').innerHTML = dailyPayOpts || '<option value="" disabled>日払い対象のスタッフがいません</option>';
+  const activeItems = backItemsCache.filter(i => i.is_active).sort((a, b) => a.sort_order - b.sort_order);
+  document.getElementById('back-item').innerHTML = activeItems.map(i => `<option value="${i.id}">${escapeHtml(i.name)}（¥${yen(i.back_amount)}）</option>`).join('');
+}
+async function renderBackItemManageList(){
+  await loadBackItems();
+  const wrap = document.getElementById('back-item-manage-list');
+  const sorted = backItemsCache.slice().sort((a, b) => a.sort_order - b.sort_order);
+  wrap.innerHTML = sorted.map(item => `
+    <div class="staff-row" style="${item.is_active ? '' : 'opacity:.5;'}">
+      <div style="flex:1;">
+        <div class="staff-name">${escapeHtml(item.name)}<span class="badge" style="background:var(--bg);color:var(--ink-soft);margin-left:6px;">${escapeHtml(item.category || '')}</span></div>
+        <div class="form-grid" style="grid-template-columns:auto 1fr auto 1fr;align-items:center;gap:6px;margin:6px 0 0;max-width:340px;">
+          <label style="margin:0;">販売価格</label>
+          <input type="number" value="${item.sale_price ?? ''}" placeholder="任意" min="0" onchange="updateBackItem('${item.id}','sale_price',this.value)">
+          <label style="margin:0;">バック</label>
+          <input type="number" value="${item.back_amount}" min="0" onchange="updateBackItem('${item.id}','back_amount',this.value)">
+        </div>
+      </div>
+      <button class="btn ghost sm" onclick="toggleBackItemActive('${item.id}', ${!item.is_active})">${item.is_active ? '無効にする' : '有効にする'}</button>
+    </div>`).join('') || '<p style="font-size:13px;color:var(--ink-soft);">まだバック項目がありません</p>';
+}
+window.updateBackItem = async function(id, field, val){
+  const num = val === '' ? null : parseFloat(val);
+  if (field === 'back_amount' && (num === null || isNaN(num) || num < 0)) { alert('正しいバック金額を入力してください'); renderBackItemManageList(); return; }
+  await sb.from('back_items').update({ [field]: num }).eq('id', id);
+  populateSelects();
+};
+window.toggleBackItemActive = async function(id, newVal){
+  await sb.from('back_items').update({ is_active: newVal }).eq('id', id);
+  renderBackItemManageList();
+  populateSelects();
+};
+window.addBackItem = async function(){
+  const name = document.getElementById('new-backitem-name').value.trim();
+  const category = document.getElementById('new-backitem-category').value;
+  const priceVal = document.getElementById('new-backitem-price').value;
+  const backVal = document.getElementById('new-backitem-back').value;
+  const backAmount = parseFloat(backVal);
+  if (!name || isNaN(backAmount) || backAmount < 0) { alert('項目名とバック金額を正しく入力してください'); return; }
+  const salePrice = priceVal === '' ? null : parseFloat(priceVal);
+  const maxOrder = backItemsCache.reduce((m, i) => Math.max(m, i.sort_order), 0);
+  await sb.from('back_items').insert({ store_id: currentStoreId, name, category, sale_price: salePrice, back_amount: backAmount, is_active: true, sort_order: maxOrder + 1 });
+  document.getElementById('new-backitem-name').value = '';
+  document.getElementById('new-backitem-price').value = '';
+  document.getElementById('new-backitem-back').value = '';
+  renderBackItemManageList();
+  populateSelects();
+};
+async function renderBackRecords(){
+  const bd = currentBusinessDate();
+  const { data } = await sb.from('back_records').select('*, staff:staff_id(name), back_items:back_item_id(name)').eq('business_date', bd).order('created_at', { ascending: false });
+  const wrap = document.getElementById('back-records-list');
+  wrap.innerHTML = (data || []).map(r => `
+    <div class="staff-row"><div>${escapeHtml(r.staff?.name || '')} — ${escapeHtml(r.back_items?.name || '')}</div><div>¥${yen(r.amount)}</div></div>
+  `).join('') || '<p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p>';
+}
+window.addBackRecord = async function(){
+  const staffId = document.getElementById('back-staff').value;
+  const itemId = document.getElementById('back-item').value;
+  if (!staffId || !itemId) { alert('スタッフとバック項目を選んでください'); return; }
+  const item = backItemsCache.find(i => i.id === itemId);
+  await sb.from('back_records').insert({ store_id: currentStoreId, staff_id: staffId, back_item_id: itemId, business_date: currentBusinessDate(), quantity: 1, amount: item.back_amount });
+  renderBackRecords();
+  renderHomeStats();
+};
+async function renderDailyPays(){
+  const bd = currentBusinessDate();
+  const { data } = await sb.from('daily_payments').select('*, staff:staff_id(name)').eq('business_date', bd).order('created_at', { ascending: false });
+  const wrap = document.getElementById('daily-pay-list');
+  const sourceLabel = { register_cash: 'レジ現金', other_cash: '別現金', bank: '銀行振込' };
+  wrap.innerHTML = (data || []).map(p => `
+    <div class="staff-row"><div>${escapeHtml(p.staff?.name || '')}（${sourceLabel[p.pay_source] || p.pay_source}）</div><div>¥${yen(p.amount)}</div></div>
+  `).join('') || '<p style="font-size:13px;color:var(--ink-soft);">まだ登録がありません</p>';
+}
+window.addDailyPay = async function(){
+  const staffId = document.getElementById('pay-staff').value;
+  const amount = parseFloat(document.getElementById('pay-amount').value);
+  const source = document.getElementById('pay-source').value;
+  if (!staffId || isNaN(amount) || amount <= 0) { alert('スタッフと金額を正しく入力してください'); return; }
+  await sb.from('daily_payments').insert({ store_id: currentStoreId, staff_id: staffId, business_date: currentBusinessDate(), amount, pay_source: source });
+  document.getElementById('pay-amount').value = '';
+  renderDailyPays();
+  renderHomeStats();
+};
+
+// ---- 今日の営業 ----
+let denomCounts = {};
+const DENOMINATIONS = [10000, 5000, 1000, 500, 100, 50, 10, 5, 1];
+async function loadReport(){
+  const bd = currentBusinessDate();
+  applyDailySettingsVisibility();
+
+  const { data: report } = await sb.from('daily_reports').select('*').eq('business_date', bd).maybeSingle();
+  const closed = report && report.status === 'closed';
+  document.getElementById('report-closed-banner').style.display = closed ? 'block' : 'none';
+  document.getElementById('report-fields').disabled = closed;
+
+  const { data: sales } = await sb.from('sales_records').select('*').eq('business_date', bd);
+  const salesByMethod = { cash: 0, card: 0, qr: 0, other: 0 };
+  (sales || []).forEach(s => { salesByMethod[s.payment_method] = (salesByMethod[s.payment_method] || 0) + s.amount; });
+  document.getElementById('sales-cash').value = salesByMethod.cash || '';
+  document.getElementById('sales-card').value = salesByMethod.card || '';
+  document.getElementById('sales-qr').value = salesByMethod.qr || '';
+  document.getElementById('sales-other').value = salesByMethod.other || '';
+
+  document.getElementById('visitor-groups').value = report?.visitor_groups ?? '';
+  document.getElementById('visitor-count').value = report?.visitor_count ?? '';
+  document.getElementById('business-note').value = report?.note || '';
+
+  const { data: expenses } = await sb.from('cash_transactions').select('*').eq('business_date', bd).eq('type', 'expense');
+  renderExpenseList(expenses || []);
+
+  const { data: denoms } = await sb.from('cash_denomination_counts').select('*').eq('business_date', bd);
+  denomCounts = {};
+  (denoms || []).forEach(d => { denomCounts[d.denomination] = d.count; });
+  renderDenominations();
+
+  updateReportTotals();
+}
+function applyDailySettingsVisibility(){
+  const d = dailySettingsCache;
+  document.getElementById('card-sales').style.display = d.use_sales ? 'block' : 'none';
+  document.getElementById('card-visitors').style.display = (d.use_visitor_groups || d.use_visitor_count) ? 'block' : 'none';
+  document.getElementById('field-visitor-groups').style.display = d.use_visitor_groups ? 'block' : 'none';
+  document.getElementById('field-visitor-count').style.display = d.use_visitor_count ? 'block' : 'none';
+  document.getElementById('card-expenses').style.display = d.use_expenses ? 'block' : 'none';
+  document.getElementById('card-notes').style.display = d.use_notes ? 'block' : 'none';
+  document.getElementById('card-cash-count').style.display = d.use_cash_count ? 'block' : 'none';
+  document.getElementById('card-cash-closing').style.display = d.use_cash_closing ? 'block' : 'none';
+}
+window.updateReportTotals = async function(){
+  const cash = parseFloat(document.getElementById('sales-cash').value) || 0;
+  const card = parseFloat(document.getElementById('sales-card').value) || 0;
+  const qr = parseFloat(document.getElementById('sales-qr').value) || 0;
+  const other = parseFloat(document.getElementById('sales-other').value) || 0;
+  document.getElementById('sales-total').textContent = yen(cash + card + qr + other);
+
+  const bd = currentBusinessDate();
+  await sb.from('sales_records').delete().eq('business_date', bd).eq('store_id', currentStoreId);
+  const rows = [];
+  if (cash) rows.push({ store_id: currentStoreId, business_date: bd, payment_method: 'cash', amount: cash });
+  if (card) rows.push({ store_id: currentStoreId, business_date: bd, payment_method: 'card', amount: card });
+  if (qr) rows.push({ store_id: currentStoreId, business_date: bd, payment_method: 'qr', amount: qr });
+  if (other) rows.push({ store_id: currentStoreId, business_date: bd, payment_method: 'other', amount: other });
+  if (rows.length) await sb.from('sales_records').insert(rows);
+
+  await sb.from('daily_reports').upsert({
+    store_id: currentStoreId, business_date: bd,
+    visitor_groups: parseFloat(document.getElementById('visitor-groups').value) || null,
+    visitor_count: parseFloat(document.getElementById('visitor-count').value) || null,
+  }, { onConflict: 'store_id,business_date' });
+
+  updateCashClosingCalc(cash);
+};
+window.saveReportNote = async function(){
+  const bd = currentBusinessDate();
+  await sb.from('daily_reports').upsert({ store_id: currentStoreId, business_date: bd, note: document.getElementById('business-note').value }, { onConflict: 'store_id,business_date' });
+};
+function renderExpenseList(expenses){
+  document.getElementById('expense-list').innerHTML = expenses.map(e => `
+    <div class="staff-row"><div>${escapeHtml(e.label || '')}</div><div>¥${yen(e.amount)}</div></div>
+  `).join('');
+}
+window.addExpense = async function(){
+  const label = document.getElementById('exp-label').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const source = document.getElementById('exp-source').value;
+  if (!label || isNaN(amount) || amount <= 0) { alert('内容と金額を正しく入力してください'); return; }
+  await sb.from('cash_transactions').insert({ store_id: currentStoreId, business_date: currentBusinessDate(), type: 'expense', label, amount, pay_source: source });
+  document.getElementById('exp-label').value = '';
+  document.getElementById('exp-amount').value = '';
+  loadReport();
+};
+function renderDenominations(){
+  document.getElementById('denom-wrap').innerHTML = DENOMINATIONS.map(d => `
+    <div class="denom-row">
+      <div class="d">¥${d.toLocaleString('ja-JP')}</div>
+      <input type="number" min="0" value="${denomCounts[d] || ''}" placeholder="枚数" onchange="onDenomInput(${d}, this.value)">
+      <div class="sub">¥${yen((denomCounts[d] || 0) * d)}</div>
+    </div>`).join('');
+  updateCashActual();
+}
+window.onDenomInput = async function(denom, val){
+  const count = parseInt(val, 10) || 0;
+  denomCounts[denom] = count;
+  await sb.from('cash_denomination_counts').upsert({ store_id: currentStoreId, business_date: currentBusinessDate(), denomination: denom, count }, { onConflict: 'store_id,business_date,denomination' });
+  renderDenominations();
+};
+function updateCashActual(){
+  const total = DENOMINATIONS.reduce((s, d) => s + (denomCounts[d] || 0) * d, 0);
+  document.getElementById('cash-actual').textContent = yen(total);
+  const cash = parseFloat(document.getElementById('sales-cash').value) || 0;
+  updateCashClosingCalc(cash);
+}
+async function updateCashClosingCalc(cashSales){
+  const bd = currentBusinessDate();
+  const registerFloat = storeSettingsCache.register_float || 0;
+  const { data: expenses } = await sb.from('cash_transactions').select('amount, pay_source').eq('business_date', bd).eq('type', 'expense').eq('pay_source', 'register_cash');
+  const cashExpenseTotal = (expenses || []).reduce((s, e) => s + e.amount, 0);
+  const { data: pays } = await sb.from('daily_payments').select('amount, pay_source').eq('business_date', bd).eq('pay_source', 'register_cash');
+  const cashPayTotal = (pays || []).reduce((s, p) => s + p.amount, 0);
+  const theoretical = registerFloat + (cashSales || 0) - cashExpenseTotal - cashPayTotal;
+  const actual = DENOMINATIONS.reduce((s, d) => s + (denomCounts[d] || 0) * d, 0);
+  const diff = actual - theoretical;
+  document.getElementById('cash-theoretical').textContent = yen(theoretical);
+  document.getElementById('cash-diff').textContent = yen(diff);
+}
+window.closeReport = async function(){
+  const bd = currentBusinessDate();
+  const theoretical = parseFloat(document.getElementById('cash-theoretical').textContent.replace(/,/g, '')) || 0;
+  const actual = parseFloat(document.getElementById('cash-actual').textContent.replace(/,/g, '')) || 0;
+  const diff = actual - theoretical;
+  if (dailySettingsCache.use_cash_closing) {
+    await sb.from('cash_closings').upsert({ store_id: currentStoreId, business_date: bd, theoretical_balance: theoretical, actual_balance: actual, difference: diff }, { onConflict: 'store_id,business_date' });
+  }
+  await sb.from('daily_reports').upsert({ store_id: currentStoreId, business_date: bd, status: 'closed', closed_by: currentUserId, closed_at: new Date().toISOString() }, { onConflict: 'store_id,business_date' });
+  loadReport();
+  renderHomeStats();
+};
+window.reopenReport = async function(){
+  if (!confirm('締めを解除しますか？')) return;
+  const bd = currentBusinessDate();
+  await sb.from('daily_reports').upsert({ store_id: currentStoreId, business_date: bd, status: 'draft', closed_by: null, closed_at: null }, { onConflict: 'store_id,business_date' });
+  loadReport();
+  renderHomeStats();
+};
+
+// ---- 給与 ----
+// 計算式は netlify/functions/_payroll.ts と同一（スタッフPINログイン側の明細と一致させるため）。
+let payrollDataCache = {};
+async function renderPayroll(){
+  await loadStaff();
+  const { start, end } = currentMonthRange();
+  const targets = staffCache.filter(s => s.status !== 'retired');
+
+  const { data: attendance } = await sb.from('attendance_records').select('staff_id, clock_in, clock_out').gte('business_date', start).lte('business_date', end);
+  const { data: backs } = await sb.from('back_records').select('staff_id, amount').gte('business_date', start).lte('business_date', end);
+  const { data: pays } = await sb.from('daily_payments').select('staff_id, amount').gte('business_date', start).lte('business_date', end);
+
+  const tbody = document.getElementById('payroll-table');
+  tbody.innerHTML = targets.map(s => {
+    const hours = (attendance || []).filter(a => a.staff_id === s.id && a.clock_in && a.clock_out)
+      .reduce((sum, a) => sum + (new Date(a.clock_out) - new Date(a.clock_in)) / 3600000, 0);
+    const basePay = Math.round(hours * (s.hourly_wage || 0));
+    const backTotal = (backs || []).filter(b => b.staff_id === s.id).reduce((sum, b) => sum + b.amount, 0);
+    const payTotal = (pays || []).filter(p => p.staff_id === s.id).reduce((sum, p) => sum + p.amount, 0);
+    const final = basePay + backTotal - payTotal;
+    payrollDataCache[s.id] = { name: s.name, hours, basePay, backTotal, payTotal, final };
+    return `<tr>
+      <td>${escapeHtml(s.name)}</td>
+      <td class="right">${hours.toFixed(1)}h</td>
+      <td class="right">¥${yen(basePay)}</td>
+      <td class="right">¥${yen(backTotal)}</td>
+      <td class="right">－¥${yen(payTotal)}</td>
+      <td class="right" style="font-weight:700;">¥${yen(final)}</td>
+      <td></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7">スタッフが登録されていません</td></tr>';
+}
+window.exportPayrollCsv = function(){
+  const now = new Date();
+  const rows = [['スタッフ','勤務時間(h)','基本給','バック','日払い(前払い分)','支給見込']];
+  Object.values(payrollDataCache).forEach(d => rows.push([d.name, d.hours.toFixed(1), d.basePay, d.backTotal, -d.payTotal, d.final]));
+  downloadCsv(`給与_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}.csv`, rows);
+};
+function downloadCsv(filename, rows){
+  const csv = rows.map(row => row.map(cell => {
+    const s = String(cell ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+window.printView = function(viewId){
+  document.getElementById(viewId).classList.add('print-target');
+  window.print();
+  document.getElementById(viewId).classList.remove('print-target');
+};
+
+// ---- 月次集計 ----
+async function renderMonthly(){
+  const now = new Date();
+  document.getElementById('monthly-period-label').textContent = `${now.getFullYear()}年${now.getMonth() + 1}月の集計`;
+  const { start, end } = currentMonthRange();
+
+  const { data: sales } = await sb.from('sales_records').select('payment_method, amount, business_date').gte('business_date', start).lte('business_date', end);
+  const byMethod = { cash: 0, card: 0, qr: 0, other: 0 };
+  const businessDays = new Set();
+  (sales || []).forEach(s => { byMethod[s.payment_method] = (byMethod[s.payment_method] || 0) + s.amount; businessDays.add(s.business_date); });
+  const totalSales = Object.values(byMethod).reduce((a, b) => a + b, 0);
+
+  const { data: reports } = await sb.from('daily_reports').select('visitor_groups, business_date').gte('business_date', start).lte('business_date', end);
+  const totalGroups = (reports || []).reduce((s, r) => s + (r.visitor_groups || 0), 0);
+  (reports || []).forEach(r => businessDays.add(r.business_date));
+
+  await renderPayroll();
+  const payrollTotal = Object.values(payrollDataCache).reduce((s, d) => s + d.basePay + d.backTotal, 0);
+
+  const { data: expenses } = await sb.from('cash_transactions').select('amount').eq('type', 'expense').gte('business_date', start).lte('business_date', end);
+  const expenseTotal = (expenses || []).reduce((s, e) => s + e.amount, 0);
+
+  const laborRate = totalSales > 0 ? (payrollTotal / totalSales * 100) : 0;
+  const avgSpend = totalGroups > 0 ? totalSales / totalGroups : 0;
+
+  document.getElementById('m-total-sales').textContent = yen(totalSales);
+  document.getElementById('m-business-days').textContent = businessDays.size + '日';
+  document.getElementById('m-cash-sales').textContent = yen(byMethod.cash);
+  document.getElementById('m-card-sales').textContent = yen(byMethod.card);
+  document.getElementById('m-qr-sales').textContent = yen(byMethod.qr);
+  document.getElementById('m-visitor-groups').textContent = totalGroups + '組';
+  document.getElementById('m-avg-spend').textContent = yen(avgSpend);
+  document.getElementById('m-payroll-total').textContent = yen(payrollTotal);
+  document.getElementById('m-labor-rate').textContent = laborRate.toFixed(1) + '%';
+  document.getElementById('m-expense-total').textContent = yen(expenseTotal);
+}
+window.exportMonthlyCsv = function(){
+  const now = new Date();
+  const val = id => document.getElementById(id).textContent;
+  const rows = [
+    ['項目','値'],
+    ['対象月', `${now.getFullYear()}年${now.getMonth() + 1}月`],
+    ['総売上', val('m-total-sales')], ['営業日数', val('m-business-days')],
+    ['現金売上', val('m-cash-sales')], ['カード', val('m-card-sales')], ['電子決済', val('m-qr-sales')],
+    ['来店組数', val('m-visitor-groups')], ['客単価', val('m-avg-spend')],
+    ['給与合計（バック含む）', val('m-payroll-total')], ['人件費率', val('m-labor-rate')],
+    ['経費・仕入合計', val('m-expense-total')],
+  ];
+  downloadCsv(`月次集計_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}.csv`, rows);
+};
+
+// ---- 設定 ----
+const DAILY_SETTING_FLAGS = [
+  { key: 'use_sales', label: '売上入力' },
+  { key: 'use_sales_by_payment', label: '売上を支払方法別に入力' },
+  { key: 'use_visitor_groups', label: '組数を記録' },
+  { key: 'use_visitor_count', label: '人数を記録' },
+  { key: 'use_staff_display', label: '出勤スタッフの表示' },
+  { key: 'use_daily_pay', label: '日払い機能' },
+  { key: 'use_expenses', label: '経費記録' },
+  { key: 'use_purchases', label: '仕入記録' },
+  { key: 'use_other_income', label: 'その他入金記録' },
+  { key: 'use_other_outcome', label: 'その他出金記録' },
+  { key: 'use_notes', label: '申し送りメモ' },
+  { key: 'use_cash_count', label: '金種カウント' },
+  { key: 'use_cash_closing', label: 'レジ締め（現金過不足チェック）' },
+];
+async function renderSettings(){
+  const { data: store } = await sb.from('stores').select('name').eq('id', currentStoreId).maybeSingle();
+  document.getElementById('set-store-name').value = store?.name || '';
+  document.getElementById('set-base-wage').value = storeSettingsCache.base_hourly_wage ?? '';
+  document.getElementById('set-closing-day').value = storeSettingsCache.closing_day ?? 31;
+  document.getElementById('set-payday').value = storeSettingsCache.payday ?? 10;
+  document.getElementById('set-night-switch').value = (storeSettingsCache.business_day_switch_time || '05:00:00').slice(0, 5);
+  document.getElementById('set-register-float').value = storeSettingsCache.register_float ?? '';
+
+  document.getElementById('daily-settings-list').innerHTML = DAILY_SETTING_FLAGS.map(f => `
+    <div class="flag-row">
+      <span>${f.label}</span>
+      <label class="switch">
+        <input type="checkbox" ${dailySettingsCache[f.key] ? 'checked' : ''} onchange="toggleDailySetting('${f.key}', this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>`).join('');
+
+  const { data: sub } = await sb.from('subscriptions').select('*').eq('store_id', currentStoreId).maybeSingle();
+  const planLabel = { light: 'LIGHT', standard: 'STANDARD', pro: 'PRO' };
+  const statusLabel = { trialing: '無料体験中', active: '契約中', past_due: '支払い遅延', canceled: '解約済' };
+  if (sub) {
+    document.getElementById('current-plan-label').textContent = `${planLabel[sub.plan_id] || '未設定'}（${statusLabel[sub.status] || sub.status}）`;
+    if (sub.status === 'trialing' && sub.trial_ends_at) {
+      const daysLeft = Math.max(0, Math.ceil((new Date(sub.trial_ends_at) - new Date()) / 86400000));
+      document.getElementById('trial-remain-label').textContent = `無料体験はあと ${daysLeft} 日で終了します`;
+    } else {
+      document.getElementById('trial-remain-label').textContent = '';
+    }
+  }
+}
+window.onStoreSettingChange = async function(){
+  const storeName = document.getElementById('set-store-name').value.trim();
+  if (storeName) await sb.from('stores').update({ name: storeName }).eq('id', currentStoreId);
+
+  storeSettingsCache = {
+    store_id: currentStoreId,
+    base_hourly_wage: parseFloat(document.getElementById('set-base-wage').value) || null,
+    closing_day: parseInt(document.getElementById('set-closing-day').value, 10),
+    payday: parseInt(document.getElementById('set-payday').value, 10),
+    business_day_switch_time: document.getElementById('set-night-switch').value + ':00',
+    register_float: parseFloat(document.getElementById('set-register-float').value) || null,
+  };
+  await sb.from('store_settings').upsert(storeSettingsCache, { onConflict: 'store_id' });
+  const note = document.getElementById('store-settings-saved-note');
+  note.style.display = 'block';
+  setTimeout(() => note.style.display = 'none', 2000);
+};
+window.toggleDailySetting = async function(key, checked){
+  dailySettingsCache[key] = checked;
+  await sb.from('store_daily_settings').upsert({ store_id: currentStoreId, ...dailySettingsCache }, { onConflict: 'store_id' });
+};
+window.applyPreset = function(preset){
+  const presets = {
+    simple:      { use_sales:false, use_sales_by_payment:false, use_visitor_groups:false, use_visitor_count:false, use_expenses:false, use_cash_count:false, use_cash_closing:false, use_notes:false },
+    cashOnly:    { use_sales:false, use_sales_by_payment:false, use_visitor_groups:false, use_visitor_count:false, use_expenses:false, use_cash_count:true,  use_cash_closing:false, use_notes:false },
+    cashClosing: { use_sales:true,  use_sales_by_payment:false, use_visitor_groups:false, use_visitor_count:false, use_expenses:true,  use_cash_count:true,  use_cash_closing:true,  use_notes:false },
+    all:         { use_sales:true,  use_sales_by_payment:true,  use_visitor_groups:true,  use_visitor_count:true,  use_expenses:true,  use_cash_count:true,  use_cash_closing:true,  use_notes:true },
+  };
+  Object.assign(dailySettingsCache, presets[preset]);
+  sb.from('store_daily_settings').upsert({ store_id: currentStoreId, ...dailySettingsCache }, { onConflict: 'store_id' });
+  renderSettings();
+};
+window.openBillingPortal = async function(){
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch('/.netlify/functions/create-portal-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+    body: JSON.stringify({ store_id: currentStoreId }),
+  });
+  const body = await res.json();
+  if (body.url) window.location.href = body.url;
+  else alert(body.error || 'お支払い管理画面を開けませんでした');
+};
+
+boot();
+</script>
+</body>
+</html>

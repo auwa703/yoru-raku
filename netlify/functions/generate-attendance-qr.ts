@@ -24,15 +24,30 @@ const TTL_SECONDS = parseInt(process.env.ATTENDANCE_QR_TTL_SECONDS || '30', 10);
 
 export const handler: Handler = async (event) => {
   try {
-    // 呼び出し元は「店舗の管理端末としてログイン済みのセッション」であることを前提とする。
-    // 実装時：Supabase Authのセッションからstore_idを取得し、
-    //         そのユーザーがstore_membersに所属しているかを必ず検証すること。
     const storeId = event.queryStringParameters?.store_id;
     if (!storeId) {
       return { statusCode: 400, body: JSON.stringify({ error: 'store_id is required' }) };
     }
-    // TODO: 認証チェック（Authorizationヘッダーのトークンを検証し、
-    //       このユーザーが storeId の店舗に所属しているか確認する）
+
+    // 呼び出し元が storeId の店舗に所属するSupabase Authユーザーであることを確認する。
+    const authHeader = event.headers['authorization'] || event.headers['Authorization'];
+    const token = authHeader?.replace(/^Bearer\s+/i, '');
+    if (!token) {
+      return { statusCode: 401, body: JSON.stringify({ error: '認証が必要です' }) };
+    }
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return { statusCode: 401, body: JSON.stringify({ error: '認証が必要です' }) };
+    }
+    const { data: membership } = await supabase
+      .from('store_members')
+      .select('store_id')
+      .eq('user_id', userData.user.id)
+      .eq('store_id', storeId)
+      .maybeSingle();
+    if (!membership) {
+      return { statusCode: 403, body: JSON.stringify({ error: 'この店舗の操作権限がありません' }) };
+    }
 
     const rawToken = randomBytes(24).toString('hex');
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
