@@ -6,6 +6,9 @@
 <title>ログイン｜よるラク</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="_shared/supabase-client.js"></script>
+<script src="_shared/staff-auth-guard.js"></script>
 <style>
   :root{
     --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
@@ -70,6 +73,8 @@
         <input type="email" id="login-email" placeholder="you@example.com" required>
       </div>
       <div id="pin-field" style="display:none;">
+        <label>店舗コード<span style="font-weight:400;color:var(--ink-soft);">（お店の管理者に確認してください）</span></label>
+        <input type="text" id="login-store-slug" placeholder="例：ab3xk9pq">
         <label>ログインID</label>
         <input type="text" id="login-id" placeholder="例：a-staff">
       </div>
@@ -101,13 +106,76 @@ function toggleLoginMode(){
   document.getElementById('pin-label-suffix').style.display = isStaff ? 'inline' : 'none';
   document.getElementById('login-password').placeholder = isStaff ? '4桁のPIN' : '••••••••';
   document.getElementById('mode-toggle-btn').textContent = isStaff ? '店舗管理者としてログインする方はこちら' : 'スタッフとしてログインする方はこちら';
+  document.getElementById('error-box').style.display = 'none';
 }
 
-document.getElementById('login-form').addEventListener('submit', (e)=>{
+// URLの ?store=<slug> があれば、スタッフモードの店舗コード欄に自動入力
+const params = new URLSearchParams(location.search);
+const storeSlugParam = params.get('store');
+if (storeSlugParam) {
+  document.getElementById('login-store-slug').value = storeSlugParam;
+  toggleLoginMode();
+}
+
+async function ensureStoreExists(accessToken) {
+  // メール確認必須設定のため、サインアップ直後ではなく初回ログイン時に
+  // stores/store_members/subscriptions が未作成のことがある。念のためここでも作成を試みる
+  // （signup-store.tsは既存店舗があれば何もしないので、毎回呼んでも安全）。
+  await fetch('/.netlify/functions/signup-store', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ access_token: accessToken }),
+  });
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  // 実装時：Supabase Auth（管理者）またはスタッフPIN照合（Netlify Functions経由）に置き換える
-  document.getElementById('error-box').style.display = 'none';
-  alert('この画面はデザインの確認用です。実際の認証はSupabase Auth接続後に有効になります。');
+  const errorBox = document.getElementById('error-box');
+  errorBox.style.display = 'none';
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.disabled = true;
+
+  try {
+    if (mode === 'admin') {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) {
+        errorBox.textContent = 'メールアドレスまたはパスワードが正しくありません。';
+        errorBox.style.display = 'block';
+        return;
+      }
+      await ensureStoreExists(data.session.access_token);
+      window.location.href = '/app/home.html';
+    } else {
+      const slug = document.getElementById('login-store-slug').value.trim();
+      const loginId = document.getElementById('login-id').value.trim();
+      const pin = document.getElementById('login-password').value.trim();
+      if (!slug || !loginId || !pin) {
+        errorBox.textContent = '店舗コード・ログインID・PINをすべて入力してください。';
+        errorBox.style.display = 'block';
+        return;
+      }
+      const res = await fetch('/.netlify/functions/staff-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, login_id: loginId, pin }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        errorBox.textContent = body.error || 'ログインに失敗しました。';
+        errorBox.style.display = 'block';
+        return;
+      }
+      setStaffSession(body.token);
+      window.location.href = '/app/staff-home.html';
+    }
+  } catch (err) {
+    errorBox.textContent = 'ログイン処理中にエラーが発生しました。もう一度お試しください。';
+    errorBox.style.display = 'block';
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
 </script>
 </body>

@@ -6,6 +6,9 @@
 <title>初回設定｜よるラク</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="_shared/supabase-client.js"></script>
+<script src="_shared/auth-guard.js"></script>
 <style>
   :root{
     --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
@@ -215,15 +218,33 @@ function showStep(n){
   if(n===6) renderDoneList();
   updateProgress();
 }
-window.wizardNext = function(){
+window.wizardNext = async function(){
   if(currentStep < totalSteps){ currentStep++; showStep(currentStep); }
-  else { window.location.href = 'home.html'; }
+  else {
+    const nextBtn = document.getElementById('next-btn');
+    nextBtn.disabled = true;
+    nextBtn.textContent = '保存しています...';
+    try {
+      await finishOnboarding();
+      window.location.href = 'home.html';
+    } catch (err) {
+      alert('設定の保存に失敗しました。もう一度お試しください。');
+      nextBtn.disabled = false;
+      nextBtn.textContent = 'よるラくを始める';
+    }
+  }
 };
 window.wizardBack = function(){
   if(currentStep > 1){ currentStep--; showStep(currentStep); }
 };
-window.skipWizard = function(){
+window.skipWizard = async function(){
   if(confirm('初回設定を中断して、あとで設定しますか？（いつでも「設定」から再開できます）')){
+    try {
+      await finishOnboarding();
+    } catch (err) {
+      // 保存に失敗しても、あとで「設定」から再設定できるためスキップ自体は継続する
+      console.error('オンボーディングのスキップ時保存に失敗しました', err);
+    }
     window.location.href = 'home.html';
   }
 };
@@ -295,6 +316,72 @@ function renderDoneList(){
   document.getElementById('done-list').innerHTML = items.map((t,i)=>`<li><span class="num">${i+1}</span>${t}</li>`).join('');
 }
 
+let currentStoreId = null;
+
+async function finishOnboarding(){
+  const { storeId } = await requireStoreSession();
+  currentStoreId = storeId;
+
+  const storeName = document.getElementById('w-store-name').value.trim();
+  const closeTime = document.getElementById('w-close-time').value || null;
+  const closingDayMap = {'末日':31, '15日':15, '20日':20, '25日':25};
+  const paydayMap = {'当月末日':31, '翌月5日':5, '翌月10日':10, '翌月25日':25};
+  const closingDay = closingDayMap[document.getElementById('w-closing-day').value] ?? 31;
+  const payday = paydayMap[document.getElementById('w-payday').value] ?? 10;
+  const baseWage = parseFloat(document.getElementById('w-base-wage').value) || null;
+  const registerFloat = parseFloat(document.getElementById('w-register-float').value) || null;
+
+  if (storeName) {
+    await sb.from('stores').update({ name: storeName }).eq('id', storeId);
+  }
+
+  await sb.from('store_settings').upsert({
+    store_id: storeId,
+    closing_day: closingDay,
+    payday: payday,
+    base_hourly_wage: baseWage,
+    register_float: registerFloat,
+    // 営業日切替時刻の専用入力欄がまだ無いため、閉店時刻を暫定的に採用する
+    business_day_switch_time: closeTime,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'store_id' });
+
+  const featureMap = {};
+  wizardFeatures.forEach(f => featureMap[f.key] = f.checked);
+  await sb.from('store_daily_settings').upsert({
+    store_id: storeId,
+    use_sales: !!featureMap.sales,
+    use_sales_by_payment: false,
+    use_visitor_groups: !!featureMap.visitors,
+    use_visitor_count: !!featureMap.visitors,
+    use_staff_display: true,
+    use_daily_pay: true,
+    use_expenses: !!featureMap.expenses,
+    use_purchases: false,
+    use_other_income: false,
+    use_other_outcome: false,
+    use_notes: !!featureMap.notes,
+    use_cash_count: !!featureMap.cashCount,
+    use_cash_closing: !!featureMap.cashClosing,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'store_id' });
+
+  if (wizardBackItems.length > 0) {
+    const rows = wizardBackItems.map((b, i) => ({
+      store_id: storeId, name: b.name, back_amount: b.amount, sort_order: i + 1,
+    }));
+    await sb.from('back_items').insert(rows);
+  }
+
+  if (wizardStaff.length > 0) {
+    const rows = wizardStaff.map(s => ({
+      store_id: storeId, name: s.name, hourly_wage: s.wage, status: 'active',
+    }));
+    await sb.from('staff').insert(rows);
+  }
+}
+
+requireStoreSession(); // 未ログインならここで/loginへリダイレクトされる
 showStep(1);
 </script>
 </body>

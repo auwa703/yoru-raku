@@ -6,7 +6,7 @@
   # /app 以下は認証必須のSPA的な構成を想定し、後続の実装でルーティングを調整する。
   publish = "marketing"
   functions = "netlify/functions"
-  command = "cp -r admin app demo marketing/"
+  command = "node scripts/copy-app-dirs.js"
 
 [functions]
   node_bundler = "esbuild"
