@@ -58,7 +58,7 @@
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-  @media(max-width:600px){.grid3{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:480px){.grid3{grid-template-columns:1fr 1fr;} .value{font-size:19px;}}
 
   .btn{font-weight:700;border:none;border-radius:9px;cursor:pointer;font-size:13px;padding:9px 15px;background:linear-gradient(135deg,var(--dusk),var(--brass));color:#fff;}
   .btn:hover{background:var(--dusk-deep);}

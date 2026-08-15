@@ -44,6 +44,10 @@
   /* hero */
   .hero{padding:64px 0 40px;}
   .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;}
+  @media(max-width:760px){
+    .hero{padding:40px 0 28px;}
+    .hero-grid{grid-template-columns:1fr;gap:28px;}
+  }
   .eyebrow{display:inline-flex;align-items:center;gap:6px;background:var(--brass-soft);color:#8a611f;font-size:12.5px;font-weight:700;padding:6px 13px;border-radius:20px;margin-bottom:16px;}
   h1.headline{font-size:clamp(28px,4vw,42px);font-weight:900;margin:0 0 16px;letter-spacing:-.01em;line-height:1.4;color:var(--dusk-deep);}
   h1.headline .accent{color:var(--brass);}
