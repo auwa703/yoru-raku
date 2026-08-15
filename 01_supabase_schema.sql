@@ -35,7 +35,7 @@ create table plans (
 
 create table subscriptions (
   id uuid primary key default gen_random_uuid(),
-  store_id uuid not null references stores(id) on delete cascade,
+  store_id uuid not null unique references stores(id) on delete cascade, -- 1店舗1契約のため一意制約（webhook側のupsertがこれに依存）
   plan_id text references plans(id),
   status text not null default 'trialing', -- trialing / active / past_due / canceled
   is_monitor boolean not null default false, -- 先行モニター価格かどうか

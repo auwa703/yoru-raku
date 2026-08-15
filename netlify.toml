@@ -63,6 +63,14 @@
   to = "/app/:splat"
   status = 200
 [[redirects]]
+  from = "/billing/success"
+  to = "/app/billing-success.html"
+  status = 200
+[[redirects]]
+  from = "/billing/cancel"
+  to = "/app/billing-cancel.html"
+  status = 200
+[[redirects]]
   from = "/admin"
   to = "/admin/index.html"
   status = 200

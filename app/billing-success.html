@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>お申し込みありがとうございます｜よるラク</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f4f7; --panel:#ffffff; --ink:#232228; --ink-soft:#6b6a72; --line:#e6e4de;
+    --dusk:#0d1b2a; --dusk-deep:#08111c; --brass:#ff7a59; --brass-soft:#ffe8df;
+    --good:#4b7a63; --good-soft:#e7f0ea;
+    --radius:16px; --shadow:0 1px 3px rgba(35,34,40,.06),0 10px 28px rgba(35,34,40,.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;background:var(--dusk-deep);color:var(--ink);font-family:'Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;padding:20px;}
+  .status-bar{position:fixed;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--dusk),var(--brass),var(--dusk-deep));}
+
+  .auth-wrap{width:100%;max-width:400px;}
+  .brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:26px;}
+  .brand-mark{
+    width:46px;height:46px;border-radius:50%;
+    background:conic-gradient(from -50deg, var(--brass) 0deg 110deg, var(--dusk) 110deg 360deg);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 9px), #000 calc(100% - 9px));
+  }
+  .brand-name{font-size:19px;font-weight:900;color:#fff;letter-spacing:.02em;}
+  .brand-tagline{font-size:11.5px;color:#9aa3b5;}
+
+  .card{background:var(--panel);border-radius:20px;box-shadow:var(--shadow);padding:34px 28px;text-align:center;}
+  .icon{width:56px;height:56px;border-radius:50%;background:var(--good-soft);color:var(--good);
+    display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 18px;}
+  h1{font-size:18px;font-weight:900;margin:0 0 10px;color:var(--dusk-deep);}
+  p{font-size:13.5px;color:var(--ink-soft);line-height:1.7;margin:0 0 22px;}
+  .btn{display:inline-block;width:100%;font-family:inherit;font-weight:700;border:none;border-radius:10px;cursor:pointer;
+    font-size:15px;padding:13px;background:linear-gradient(135deg,var(--dusk),var(--brass));color:#fff;text-decoration:none;box-sizing:border-box;}
+  .btn:hover{filter:brightness(1.05);}
+  .session-note{font-size:11px;color:#9aa3b5;margin-top:16px;word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="status-bar"></div>
+
+<div class="auth-wrap">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div class="brand-name">よるラク</div>
+    <div class="brand-tagline">夜業態の経営をラクにする管理アプリ by ENOWA</div>
+  </div>
+
+  <div class="card">
+    <div class="icon">✓</div>
+    <h1>お申し込みありがとうございます</h1>
+    <p>お手続きが完了しました。ログイン後、すぐにご利用いただけます。<br>ご登録のメールアドレス宛に確認メールをお送りしています。</p>
+    <a class="btn" href="/login">ログインする</a>
+    <p class="session-note" id="session-note" style="display:none;"></p>
+  </div>
+</div>
+
+<script>
+// 実装時：session_idをNetlify Functions経由でStripeに照会し、
+// 決済内容の最終確認・エラー時の案内表示に利用する想定（契約自体の有効化はstripe-webhook.tsが行う）。
+const params = new URLSearchParams(window.location.search);
+const sessionId = params.get('session_id');
+if(sessionId){
+  const note = document.getElementById('session-note');
+  note.textContent = `お手続き番号：${sessionId}`;
+  note.style.display = 'block';
+}
+</script>
+</body>
+</html>
