@@ -47,13 +47,15 @@ export const handler: Handler = async (event) => {
           .select('id, name, created_at, subscriptions(plan_id, status, is_monitor), staff(id)')
           .order('created_at', { ascending: false });
         if (error) throw error;
+        // subscriptions.store_id にunique制約があるため、PostgRESTは1対1関係とみなし
+        // 配列ではなく単一オブジェクト（該当行が無ければnull）で返す。
         const result = (stores || []).map((s: any) => ({
           id: s.id,
           name: s.name,
           registeredAt: s.created_at?.slice(0, 10),
-          plan: s.subscriptions?.[0]?.plan_id || null,
-          status: s.subscriptions?.[0]?.status || 'trialing',
-          isMonitor: s.subscriptions?.[0]?.is_monitor || false,
+          plan: s.subscriptions?.plan_id || null,
+          status: s.subscriptions?.status || 'trialing',
+          isMonitor: s.subscriptions?.is_monitor || false,
           staffCount: (s.staff || []).length,
         }));
         return { statusCode: 200, body: JSON.stringify({ stores: result }) };
